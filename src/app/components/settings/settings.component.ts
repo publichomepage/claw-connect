@@ -64,23 +64,22 @@ import { ConnectionConfig } from '../../services/openclaw.service';
   `,
   styles: [`
     .settings-panel {
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 16px;
+      background: transparent;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
       overflow: hidden;
       transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
     }
 
     .settings-panel.open {
-      background: rgba(255, 255, 255, 0.06);
-      border-color: rgba(255, 69, 0, 0.2);
+      background: rgba(255, 255, 255, 0.02);
+      border-bottom-color: rgba(255, 69, 0, 0.2);
     }
 
     .settings-header {
       display: flex;
       align-items: center;
       gap: 10px;
-      padding: 14px 18px;
+      padding: 14px 20px;
       cursor: pointer;
       user-select: none;
       transition: background 0.2s;
@@ -113,7 +112,7 @@ import { ConnectionConfig } from '../../services/openclaw.service';
     }
 
     .settings-body {
-      padding: 0 18px 18px;
+      padding: 0 20px 20px;
       animation: settingsExpand 0.3s ease;
     }
 

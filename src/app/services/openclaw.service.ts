@@ -95,6 +95,8 @@ export class OpenClawService {
       this.ws.onclose = (event) => {
         this.handshakeComplete = false;
         this.connectionStatus.set('disconnected');
+        this.isTyping.set(false);
+        this.messages.update(msgs => msgs.map(m => m.isStreaming ? { ...m, isStreaming: false } : m));
         if (!event.wasClean && this.config) {
           this.attemptReconnect();
         }
@@ -102,6 +104,8 @@ export class OpenClawService {
 
       this.ws.onerror = () => {
         this.connectionStatus.set('error');
+        this.isTyping.set(false);
+        this.messages.update(msgs => msgs.map(m => m.isStreaming ? { ...m, isStreaming: false } : m));
       };
     } catch (error) {
       this.connectionStatus.set('error');
@@ -260,18 +264,21 @@ export class OpenClawService {
     const state: string = payload.state || 'final';
     const rawContent = payload.message?.content ?? payload.message ?? payload.content ?? '';
     const content = this.extractContent(rawContent);
-    const role = this.normalizeRole(payload.message?.role || payload.role || 'assistant');
+    const role: 'user' | 'assistant' | 'system' = this.normalizeRole(payload.message?.role || payload.role || 'assistant');
 
     // Handle error state
     if (state === 'error') {
       const errorText = payload.errorMessage || 'An error occurred';
       this.isTyping.set(false);
-      this.messages.update(msgs => [...msgs, {
-        id: runId || crypto.randomUUID(),
-        role: 'system',
-        content: `Error: ${errorText}`,
-        timestamp: new Date(),
-      }]);
+      this.messages.update(msgs => {
+        const newMsgs = [...msgs, {
+          id: runId || crypto.randomUUID(),
+          role: 'system' as const,
+          content: `Error: ${errorText}`,
+          timestamp: new Date(),
+        }];
+        return newMsgs.slice(-50);
+      });
       return;
     }
 
@@ -306,13 +313,16 @@ export class OpenClawService {
         );
       } else {
         // First delta for this runId — create the message
-        this.messages.update(msgs => [...msgs, {
-          id: runId,
-          role,
-          content,
-          timestamp: new Date(),
-          isStreaming: isDelta,
-        }]);
+        this.messages.update(msgs => {
+          const newMsgs = [...msgs, {
+            id: runId,
+            role,
+            content,
+            timestamp: new Date(),
+            isStreaming: isDelta,
+          }];
+          return newMsgs.slice(-50);
+        });
       }
 
       if (isFinal) {
@@ -331,7 +341,10 @@ export class OpenClawService {
         content,
         timestamp: new Date(),
       };
-      this.messages.update(msgs => [...msgs, msg]);
+      this.messages.update(msgs => {
+        const newMsgs = [...msgs, msg];
+        return newMsgs.slice(-50);
+      });
       this.incomingMessage$.next(msg);
     }
   }
@@ -350,13 +363,14 @@ export class OpenClawService {
             : m
         );
       } else if (content) {
-        return [...msgs, {
+        const newMsgs = [...msgs, {
           id: messageId,
           role: 'assistant' as const,
           content,
           timestamp: new Date(),
           isStreaming: !done,
         }];
+        return newMsgs.slice(-50);
       }
       return msgs;
     });
@@ -450,7 +464,10 @@ export class OpenClawService {
       content: text,
       timestamp: new Date(),
     };
-    this.messages.update(msgs => [...msgs, userMsg]);
+    this.messages.update(msgs => {
+      const newMsgs = [...msgs, userMsg];
+      return newMsgs.slice(-50);
+    });
     this.isTyping.set(true);
 
     try {
@@ -464,12 +481,15 @@ export class OpenClawService {
       if (result && result.content) {
         const msg: ChatMessage = {
           id: result.id || crypto.randomUUID(),
-          role: 'assistant',
+          role: 'assistant' as const,
           content: result.content,
           timestamp: result.timestamp ? new Date(result.timestamp) : new Date(),
         };
         this.isTyping.set(false);
-        this.messages.update(msgs => [...msgs, msg]);
+        this.messages.update(msgs => {
+          const newMsgs = [...msgs, msg];
+          return newMsgs.slice(-50);
+        });
         this.incomingMessage$.next(msg);
       }
       // Otherwise, response will come via chat events
@@ -477,11 +497,14 @@ export class OpenClawService {
       this.isTyping.set(false);
       const errorMsg: ChatMessage = {
         id: crypto.randomUUID(),
-        role: 'system',
+        role: 'system' as const,
         content: `Error: ${error.message || 'Failed to send message'}`,
         timestamp: new Date(),
       };
-      this.messages.update(msgs => [...msgs, errorMsg]);
+      this.messages.update(msgs => {
+        const newMsgs = [...msgs, errorMsg];
+        return newMsgs.slice(-50);
+      });
     }
   }
 
@@ -489,6 +512,7 @@ export class OpenClawService {
     try {
       const result = await this.sendRequest('chat.history', {
         sessionKey: this.sessionKey,
+        limit: 50,
       });
       if (!result) return;
 
@@ -499,7 +523,7 @@ export class OpenClawService {
             : null;
 
       if (entries && Array.isArray(entries)) {
-        const historyMessages: ChatMessage[] = entries
+        let historyMessages: ChatMessage[] = entries
           .map((entry: any) => {
             const content = this.extractContent(entry.content ?? entry.text ?? entry.message ?? '');
             return {
@@ -510,6 +534,12 @@ export class OpenClawService {
             };
           })
           .filter((m: ChatMessage) => m.content.length > 0);
+
+        // Local truncation fallback: take last 50
+        if (historyMessages.length > 50) {
+          historyMessages = historyMessages.slice(-50);
+        }
+
         if (historyMessages.length > 0) {
           this.messages.set(historyMessages);
         }
@@ -524,14 +554,16 @@ export class OpenClawService {
       clearTimeout(this.reconnectTimer);
       this.reconnectTimer = null;
     }
-    this.config = null;
-    this.handshakeComplete = false;
-    this.sessionKey = '';
+
     if (this.ws) {
-      this.ws.close(1000, 'User disconnect');
+      this.ws.close();
       this.ws = null;
     }
     this.connectionStatus.set('disconnected');
+    this.handshakeComplete = false;
+    this.sessionKey = '';
+    this.isTyping.set(false);
+    this.messages.update(msgs => msgs.map(m => m.isStreaming ? { ...m, isStreaming: false } : m));
   }
 
   clearMessages(): void {

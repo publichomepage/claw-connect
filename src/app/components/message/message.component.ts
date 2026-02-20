@@ -3,10 +3,10 @@ import { CommonModule } from '@angular/common';
 import { ChatMessage } from '../../services/openclaw.service';
 
 @Component({
-    selector: 'app-message',
-    standalone: true,
-    imports: [CommonModule],
-    template: `
+  selector: 'app-message',
+  standalone: true,
+  imports: [CommonModule],
+  template: `
     <div class="message-wrapper" [class]="'message-' + message.role">
       <div class="message-avatar">
         <span class="avatar-icon">{{ message.role === 'user' ? '👤' : message.role === 'system' ? '⚠️' : '🦞' }}</span>
@@ -27,7 +27,7 @@ import { ChatMessage } from '../../services/openclaw.service';
       </div>
     </div>
   `,
-    styles: [`
+  styles: [`
     .message-wrapper {
       display: flex;
       gap: 12px;
@@ -74,14 +74,15 @@ import { ChatMessage } from '../../services/openclaw.service';
     }
 
     .message-user .message-bubble {
-      background: linear-gradient(135deg, #FF4500, #E63E00);
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.1);
       border-radius: 16px 16px 4px 16px;
-      color: #fff;
+      color: #e0e0e0;
     }
 
     .message-assistant .message-bubble {
-      background: rgba(255, 255, 255, 0.07);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
       backdrop-filter: blur(8px);
       border-radius: 16px 16px 16px 4px;
       color: #e0e0e0;
@@ -169,47 +170,47 @@ import { ChatMessage } from '../../services/openclaw.service';
   `]
 })
 export class MessageComponent {
-    @Input({ required: true }) message!: ChatMessage;
+  @Input({ required: true }) message!: ChatMessage;
 
-    getSenderName(): string {
-        switch (this.message.role) {
-            case 'user': return 'You';
-            case 'assistant': return 'OpenClaw';
-            case 'system': return 'System';
-            default: return 'Unknown';
-        }
+  getSenderName(): string {
+    switch (this.message.role) {
+      case 'user': return 'You';
+      case 'assistant': return 'OpenClaw';
+      case 'system': return 'System';
+      default: return 'Unknown';
     }
+  }
 
-    formatTime(date: Date): string {
-        return new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    }
+  formatTime(date: Date): string {
+    return new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
 
-    formatContent(content: string): string {
-        // Basic markdown-like formatting
-        let formatted = this.escapeHtml(content);
+  formatContent(content: string): string {
+    // Basic markdown-like formatting
+    let formatted = this.escapeHtml(content);
 
-        // Code blocks
-        formatted = formatted.replace(/```(\w+)?\n([\s\S]*?)```/g,
-            '<pre><code>$2</code></pre>');
-        formatted = formatted.replace(/```([\s\S]*?)```/g,
-            '<pre><code>$1</code></pre>');
+    // Code blocks
+    formatted = formatted.replace(/```(\w+)?\n([\s\S]*?)```/g,
+      '<pre><code>$2</code></pre>');
+    formatted = formatted.replace(/```([\s\S]*?)```/g,
+      '<pre><code>$1</code></pre>');
 
-        // Inline code
-        formatted = formatted.replace(/`([^`]+)`/g,
-            '<code>$1</code>');
+    // Inline code
+    formatted = formatted.replace(/`([^`]+)`/g,
+      '<code>$1</code>');
 
-        // Bold
-        formatted = formatted.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    // Bold
+    formatted = formatted.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
 
-        // Italic
-        formatted = formatted.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+    // Italic
+    formatted = formatted.replace(/\*([^*]+)\*/g, '<em>$1</em>');
 
-        return formatted;
-    }
+    return formatted;
+  }
 
-    private escapeHtml(text: string): string {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
+  private escapeHtml(text: string): string {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
 }

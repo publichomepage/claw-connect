@@ -1,6 +1,7 @@
 import { Component, ElementRef, ViewChild, OnDestroy, signal, AfterViewInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { ScreenShareService } from '../../services/screen-share.service';
 
 interface ScreenShareConfig {
     host: string;
@@ -93,20 +94,7 @@ interface ScreenShareConfig {
         }
       </div>
 
-      <!-- Status Messages -->
-      @if (statusMessage()) {
-        <div class="status-bar" [class]="'status-' + statusType()">
-          <span class="status-icon">
-            @switch (statusType()) {
-              @case ('success') { ✅ }
-              @case ('error') { ❌ }
-              @case ('info') { ℹ️ }
-              @default { ⏳ }
-            }
-          </span>
-          <span>{{ statusMessage() }}</span>
-        </div>
-      }
+      <!-- Status overlay removed (dot moved to header labels) -->
 
       <!-- VNC Viewer Area -->
       <div class="viewer-area" [class.active]="isConnected()">
@@ -174,28 +162,28 @@ interface ScreenShareConfig {
       display: flex;
       flex-direction: column;
       height: 100%;
-      gap: 10px;
+      gap: 0;
     }
 
     /* Config Panel */
     .config-panel {
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 16px;
+      background: transparent;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
       overflow: hidden;
       transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
     }
-
+ 
     .config-panel:not(.collapsed):hover,
     .config-panel.collapsed {
-      border-color: rgba(255, 69, 0, 0.15);
+      background: rgba(255, 255, 255, 0.02);
+      border-bottom-color: rgba(255, 69, 0, 0.2);
     }
 
     .config-header {
       display: flex;
       align-items: center;
       gap: 10px;
-      padding: 14px 18px;
+      padding: 14px 20px;
       cursor: pointer;
       user-select: none;
       transition: background 0.2s;
@@ -226,7 +214,7 @@ interface ScreenShareConfig {
     }
 
     .config-body {
-      padding: 0 18px 18px;
+      padding: 0 20px 20px;
       animation: configExpand 0.3s ease;
     }
 
@@ -359,66 +347,22 @@ interface ScreenShareConfig {
       to { transform: rotate(360deg); }
     }
 
-    /* Status Bar */
-    .status-bar {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 16px;
-      border-radius: 12px;
-      font-size: 12px;
-      font-weight: 500;
-      animation: statusSlideIn 0.3s ease;
-    }
-
-    @keyframes statusSlideIn {
-      from { opacity: 0; transform: translateY(-4px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .status-success {
-      background: rgba(76, 175, 80, 0.1);
-      border: 1px solid rgba(76, 175, 80, 0.2);
-      color: #81C784;
-    }
-
-    .status-error {
-      background: rgba(244, 67, 54, 0.1);
-      border: 1px solid rgba(244, 67, 54, 0.2);
-      color: #EF9A9A;
-    }
-
-    .status-info {
-      background: rgba(33, 150, 243, 0.1);
-      border: 1px solid rgba(33, 150, 243, 0.2);
-      color: #90CAF9;
-    }
-
-    .status-connecting {
-      background: rgba(255, 152, 0, 0.1);
-      border: 1px solid rgba(255, 152, 0, 0.2);
-      color: #FFCC80;
-    }
-
-    .status-icon { font-size: 14px; }
+    /* Status Overlay Removed */
 
     /* Viewer Area */
     .viewer-area {
       flex: 1;
-      background: rgba(255, 255, 255, 0.02);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: 20px;
+      background: transparent;
       overflow: hidden;
       position: relative;
       min-height: 200px;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: border-color 0.3s;
+      transition: background 0.3s;
     }
 
     .viewer-area.active {
-      border-color: rgba(76, 175, 80, 0.2);
       background: #000;
     }
 
@@ -466,10 +410,9 @@ interface ScreenShareConfig {
 
     .prereqs {
       text-align: left;
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: 14px;
-      padding: 16px 20px;
+      background: transparent;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      padding: 20px;
     }
 
     .prereq-title {
@@ -520,10 +463,9 @@ interface ScreenShareConfig {
       display: flex;
       align-items: center;
       gap: 6px;
-      padding: 8px 12px;
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 14px;
+      padding: 16px 20px;
+      background: transparent;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
       animation: toolbarSlideIn 0.3s ease;
     }
 
@@ -598,14 +540,13 @@ export class ScreenShareComponent implements OnDestroy, AfterViewInit {
     readonly isConnecting = signal(false);
     readonly configOpen = signal(true);
     readonly statusMessage = signal('');
-    readonly statusType = signal<'success' | 'error' | 'info' | 'connecting'>('info');
     readonly scaleViewport = signal(true);
 
     private rfb: any = null;
     private noVNCLoaded = false;
     private RFBClass: any = null;
 
-    constructor() {
+    constructor(public ss: ScreenShareService) {
         this.loadConfig();
     }
 
@@ -625,8 +566,8 @@ export class ScreenShareComponent implements OnDestroy, AfterViewInit {
         if (!this.host) return;
 
         this.isConnecting.set(true);
+        this.ss.updateStatus('connecting');
         this.statusMessage.set('Connecting to ' + this.host + ':' + this.port + '...');
-        this.statusType.set('connecting');
         this.saveConfig();
 
         try {
@@ -657,8 +598,8 @@ export class ScreenShareComponent implements OnDestroy, AfterViewInit {
             this.rfb.addEventListener('connect', () => {
                 this.isConnected.set(true);
                 this.isConnecting.set(false);
+                this.ss.updateStatus('connected');
                 this.statusMessage.set('Connected to ' + this.host);
-                this.statusType.set('success');
                 this.configOpen.set(false);
             });
 
@@ -667,10 +608,10 @@ export class ScreenShareComponent implements OnDestroy, AfterViewInit {
                 this.isConnecting.set(false);
                 if (e.detail?.clean) {
                     this.statusMessage.set('Disconnected');
-                    this.statusType.set('info');
+                    this.ss.updateStatus('disconnected');
                 } else {
                     this.statusMessage.set('Connection lost — check ws-proxy and Tailscale');
-                    this.statusType.set('error');
+                    this.ss.updateStatus('error', 'Connection lost');
                 }
             });
 
@@ -684,7 +625,7 @@ export class ScreenShareComponent implements OnDestroy, AfterViewInit {
                     if (needsUsername && !this.username) missing.push('Mac username');
                     if (needsPassword && !this.password) missing.push('Mac password');
                     this.statusMessage.set('Authentication required — enter ' + missing.join(' and ') + ' above');
-                    this.statusType.set('error');
+                    this.ss.updateStatus('error', 'Auth required');
                     this.isConnecting.set(false);
                     this.configOpen.set(true);
                     return;
@@ -698,14 +639,14 @@ export class ScreenShareComponent implements OnDestroy, AfterViewInit {
 
             this.rfb.addEventListener('securityfailure', (e: any) => {
                 this.statusMessage.set('Authentication failed: ' + (e.detail?.reason || 'wrong password'));
-                this.statusType.set('error');
+                this.ss.updateStatus('error', 'Auth failed');
                 this.isConnecting.set(false);
                 this.configOpen.set(true);
             });
         } catch (err: any) {
             this.isConnecting.set(false);
             this.statusMessage.set('Failed to connect: ' + (err.message || err));
-            this.statusType.set('error');
+            this.ss.updateStatus('error', err.message);
         }
     }
 
@@ -720,8 +661,8 @@ export class ScreenShareComponent implements OnDestroy, AfterViewInit {
         }
         this.isConnected.set(false);
         this.isConnecting.set(false);
+        this.ss.updateStatus('disconnected');
         this.statusMessage.set('Disconnected');
-        this.statusType.set('info');
         this.configOpen.set(true);
     }
 
