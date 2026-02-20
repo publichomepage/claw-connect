@@ -1,14 +1,15 @@
-import { Component, ElementRef, ViewChild, AfterViewChecked, OnInit, OnDestroy, effect } from '@angular/core';
+import { Component, ElementRef, ViewChild, AfterViewChecked, OnInit, OnDestroy, effect, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { OpenClawService, ConnectionConfig } from '../../services/openclaw.service';
 import { MessageComponent } from '../message/message.component';
 import { SettingsComponent } from '../settings/settings.component';
+import { ScreenShareComponent } from '../screen-share/screen-share.component';
 
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [CommonModule, FormsModule, MessageComponent, SettingsComponent],
+  imports: [CommonModule, FormsModule, MessageComponent, SettingsComponent, ScreenShareComponent],
   template: `
     <div class="chat-container">
       <!-- Header -->
@@ -27,71 +28,99 @@ import { SettingsComponent } from '../settings/settings.component';
         </div>
       </div>
 
-      <!-- Settings -->
-      <div class="settings-wrapper">
-        <app-settings
-          (connectRequest)="onConnect($event)"
-          (disconnectRequest)="onDisconnect()"
-        />
+      <!-- Tab Bar -->
+      <div class="tab-bar">
+        <button
+          class="tab-btn"
+          [class.active]="activeTab() === 'chat'"
+          (click)="activeTab.set('chat')"
+        >
+          <span class="tab-icon">💬</span>
+          Chat
+        </button>
+        <button
+          class="tab-btn"
+          [class.active]="activeTab() === 'screen'"
+          (click)="activeTab.set('screen')"
+        >
+          <span class="tab-icon">🖥️</span>
+          Screen Share
+        </button>
       </div>
 
-      <!-- Messages -->
-      <div class="messages-area" #messagesContainer>
-        @if (openClaw.messages().length === 0) {
-          <div class="empty-state">
-            <div class="empty-icon">🦞</div>
-            <h2 class="empty-title">Welcome to ClawConnect</h2>
-            <p class="empty-description">
-              @if (openClaw.isConnected()) {
-                Your OpenClaw Gateway is connected. Start chatting!
-              } @else {
-                Connect to your OpenClaw Gateway to start chatting.
-                <br />Configure your Gateway URL in Settings above.
-              }
-            </p>
-          </div>
-        }
-
-        @for (message of openClaw.messages(); track message.id) {
-          <app-message [message]="message" />
-        }
-
-        @if (openClaw.isTyping()) {
-          <div class="typing-indicator">
-            <span class="typing-avatar">🦞</span>
-            <div class="typing-dots">
-              <span class="dot"></span>
-              <span class="dot"></span>
-              <span class="dot"></span>
-            </div>
-          </div>
-        }
-      </div>
-
-      <!-- Input -->
-      <div class="input-area">
-        <div class="input-wrapper">
-          <textarea
-            #messageInput
-            [(ngModel)]="inputText"
-            placeholder="{{ openClaw.isConnected() ? 'Type a message...' : 'Connect to Gateway first...' }}"
-            [disabled]="!openClaw.isConnected()"
-            (keydown)="handleKeyDown($event)"
-            rows="1"
-            (input)="autoResize($event)"
-          ></textarea>
-          <button
-            class="send-button"
-            [disabled]="!openClaw.isConnected() || !inputText.trim()"
-            (click)="sendMessage()"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="22" y1="2" x2="11" y2="13"></line>
-              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-            </svg>
-          </button>
+      <!-- Chat Tab Content -->
+      @if (activeTab() === 'chat') {
+        <!-- Settings -->
+        <div class="settings-wrapper">
+          <app-settings
+            (connectRequest)="onConnect($event)"
+            (disconnectRequest)="onDisconnect()"
+          />
         </div>
-      </div>
+
+        <!-- Messages -->
+        <div class="messages-area" #messagesContainer>
+          @if (openClaw.messages().length === 0) {
+            <div class="empty-state">
+              <div class="empty-icon">🦞</div>
+              <h2 class="empty-title">Welcome to ClawConnect</h2>
+              <p class="empty-description">
+                @if (openClaw.isConnected()) {
+                  Your OpenClaw Gateway is connected. Start chatting!
+                } @else {
+                  Connect to your OpenClaw Gateway to start chatting.
+                  <br />Configure your Gateway URL in Settings above.
+                }
+              </p>
+            </div>
+          }
+
+          @for (message of openClaw.messages(); track message.id) {
+            <app-message [message]="message" />
+          }
+
+          @if (openClaw.isTyping()) {
+            <div class="typing-indicator">
+              <span class="typing-avatar">🦞</span>
+              <div class="typing-dots">
+                <span class="dot"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Input -->
+        <div class="input-area">
+          <div class="input-wrapper">
+            <textarea
+              #messageInput
+              [(ngModel)]="inputText"
+              placeholder="{{ openClaw.isConnected() ? 'Type a message...' : 'Connect to Gateway first...' }}"
+              [disabled]="!openClaw.isConnected()"
+              (keydown)="handleKeyDown($event)"
+              rows="1"
+              (input)="autoResize($event)"
+            ></textarea>
+            <button
+              class="send-button"
+              [disabled]="!openClaw.isConnected() || !inputText.trim()"
+              (click)="sendMessage()"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+              </svg>
+            </button>
+          </div>
+        </div>
+      }
+
+      <!-- Screen Share Tab Content -->
+      @if (activeTab() === 'screen') {
+        <app-screen-share />
+      }
     </div>
   `,
   styles: [`
@@ -205,6 +234,50 @@ import { SettingsComponent } from '../settings/settings.component';
     @keyframes statusPulse {
       0%, 100% { opacity: 1; }
       50% { opacity: 0.3; }
+    }
+
+    /* Tab Bar */
+    .tab-bar {
+      display: flex;
+      gap: 4px;
+      padding: 4px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 16px;
+      margin-bottom: 12px;
+    }
+
+    .tab-btn {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 16px;
+      background: transparent;
+      border: none;
+      border-radius: 12px;
+      color: #888;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .tab-btn:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: #bbb;
+    }
+
+    .tab-btn.active {
+      background: rgba(255, 69, 0, 0.12);
+      color: #FF6B35;
+      box-shadow: 0 2px 8px rgba(255, 69, 0, 0.1);
+    }
+
+    .tab-icon {
+      font-size: 15px;
     }
 
     /* Settings Wrapper */
@@ -419,6 +492,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   @ViewChild('messageInput') private messageInput!: ElementRef<HTMLTextAreaElement>;
 
   inputText = '';
+  activeTab = signal<'chat' | 'screen'>('chat');
   private shouldScroll = true;
 
   constructor(public openClaw: OpenClawService) {

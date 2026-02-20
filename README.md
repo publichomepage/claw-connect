@@ -17,28 +17,34 @@ ClawConnect connects to the OpenClaw Gateway via WebSocket and provides a sleek,
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────┐
-│                  ClawConnect App                   │
-│                (Angular 19 SPA)                  │
-│                                                  │
-│  ┌─────────────┐  ┌──────────┐  ┌────────────┐  │
-│  │   ChatComp  │  │ MsgComp  │  │ SettingsComp│  │
-│  │  (main UI)  │  │(messages)│  │  (config)   │  │
-│  └──────┬──────┘  └────┬─────┘  └──────┬─────┘  │
-│         │              │               │         │
-│         └──────────┬───┘               │         │
-│                    │                   │         │
-│         ┌──────────▼───────────────────▼──┐      │
-│         │       OpenClawService           │      │
-│         │  (WebSocket + Protocol v3)      │      │
-│         └──────────────┬──────────────────┘      │
-└────────────────────────┼─────────────────────────┘
-                         │ WebSocket
-                         ▼
-              ┌──────────────────────┐
-              │   OpenClaw Gateway   │
-              │  (localhost:18789)   │
-              └──────────────────────┘
+┌───────────────────────────────────────────────────────┐
+│                   ClawConnect App                      │
+│                 (Angular 19 SPA)                       │
+│                                                        │
+│  ┌───────────┐  ┌──────────┐  ┌────────────────────┐  │
+│  │  ChatComp │  │ MsgComp  │  │  ScreenShareComp   │  │
+│  │ (main UI) │  │(messages)│  │   (remote VNC)     │  │
+│  └─────┬─────┘  └────┬─────┘  └────────┬───────────┘  │
+│        │             │                 │               │
+│        └──────┬──────┘                 │               │
+│               │                        │               │
+│    ┌──────────▼──────────┐   ┌─────────▼───────────┐  │
+│    │   OpenClawService   │   │   noVNC (RFB.js)    │  │
+│    │ (WS + Protocol v3)  │   │  (ESM from public/) │  │
+│    └──────────┬──────────┘   └─────────┬───────────┘  │
+└──────────────┼───────────────────────┼────────────────┘
+               │ WebSocket             │ WebSocket
+               ▼                       ▼
+    ┌──────────────────┐    ┌──────────────────────────┐
+    │  OpenClaw Gateway │    │  ws-proxy.js (Node.js)   │
+    │ (localhost:18789) │    │  WS:6080 → TCP:5900     │
+    └──────────────────┘    └───────────┬──────────────┘
+                                        │ TCP
+                                        ▼
+                             ┌────────────────────┐
+                             │ macOS Screen Share  │
+                             │   (VNC on :5900)   │
+                             └────────────────────┘
 ```
 
 ### Project Structure
@@ -48,11 +54,19 @@ src/app/
 ├── app.ts                          # Root component
 ├── app.config.ts                   # Angular configuration
 ├── components/
-│   ├── chat/chat.component.ts      # Main chat container (header, messages, input)
+│   ├── chat/chat.component.ts      # Main chat container + tab navigation
 │   ├── message/message.component.ts# Individual message (user/assistant/system)
+│   ├── screen-share/
+│   │   └── screen-share.component.ts # Remote VNC screen sharing via noVNC
 │   └── settings/settings.component.ts # Connection settings panel
 └── services/
     └── openclaw.service.ts         # WebSocket client implementing Gateway Protocol v3
+
+public/novnc/                       # noVNC ESM source (v1.5.0)
+├── core/                           # RFB, display, input modules
+└── vendor/pako/                    # Compression library
+
+ws-proxy.js                         # Node.js WebSocket-to-TCP proxy for VNC
 ```
 
 ### Key Files
@@ -60,9 +74,11 @@ src/app/
 | File | Purpose |
 |------|---------|
 | `openclaw.service.ts` | Core WebSocket service — handles Gateway Protocol v3 handshake, request/response framing, session management, streaming, history loading, and structured content parsing |
-| `chat.component.ts` | Main UI — message list, input area, connection status, typing indicator, auto-scroll |
+| `chat.component.ts` | Main UI — tab navigation (Chat / Screen Share), message list, input area, connection status |
+| `screen-share.component.ts` | Remote VNC viewer — Tailscale config, noVNC integration, Apple ARD auth, toolbar controls |
 | `message.component.ts` | Message bubble — role-based styling (user/assistant/system), markdown rendering, timestamps |
 | `settings.component.ts` | Config panel — Gateway URL, auth token/password, localStorage persistence |
+| `ws-proxy.js` | Node.js WebSocket-to-TCP proxy — bridges browser WebSocket to macOS VNC server |
 | `styles.css` | Global premium dark theme — animated gradients, glassmorphism, custom scrollbars |
 
 ---
@@ -252,6 +268,126 @@ curl -s http://127.0.0.1:18789/ | head -1
 
 ---
 
+## Remote Screen Sharing
+
+ClawConnect includes a **Screen Share** tab that lets you remotely view and control your Mac's screen using VNC, accessible from any browser on your Tailscale network.
+
+### How It Works
+
+```
+Browser (noVNC)  ──WebSocket──▶  ws-proxy.js  ──TCP──▶  macOS VNC (:5900)
+     :4200                         :6080                  Screen Sharing
+```
+
+- **noVNC** renders the remote desktop in a `<canvas>` element inside the browser
+- **ws-proxy.js** translates between WebSocket (what browsers speak) and raw TCP (what VNC speaks)
+- **macOS Screen Sharing** is Apple's built-in VNC server (port 5900)
+
+### Prerequisites
+
+1. **macOS Screen Sharing enabled** on the target Mac
+2. **Tailscale** running on both machines (for secure remote access)
+3. **Node.js** ≥ 18 (for the WebSocket proxy)
+
+### Setup (One-Time)
+
+#### Step 1: Enable macOS Screen Sharing
+
+Open **System Settings → General → Sharing → Screen Sharing** and turn it on.
+
+Then enable legacy VNC access (run once in Terminal):
+
+```bash
+sudo /System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart \
+  -activate -configure -access -on -privs -all -restart -agent -menu
+```
+
+Verify it's working:
+
+```bash
+echo "" | nc -w 2 localhost 5900 | head -c 12
+# Should output: RFB 003.889
+```
+
+> **Note:** On macOS 26+, port 5900 is socket-activated by launchd — it won't appear in `lsof` until a connection arrives, but it works.
+
+#### Step 2: Install Tailscale
+
+Download from [tailscale.com](https://tailscale.com/download) and sign in on both machines. Note your Mac's Tailscale IP:
+
+```bash
+tailscale ip -4
+# Example: 100.99.145.23
+```
+
+#### Step 3: Install the WebSocket Proxy Dependencies
+
+```bash
+cd claw-connect
+npm install   # ws package is included in dependencies
+```
+
+### Running the Screen Share
+
+#### 1. Start the WebSocket Proxy
+
+On the **Mac whose screen you want to share**, run:
+
+```bash
+node ws-proxy.js 6080 localhost:5900
+```
+
+You should see:
+```
+[ws-proxy] Listening on :6080 → localhost:5900
+```
+
+> **Tip:** To run in the background: `node ws-proxy.js 6080 localhost:5900 &`
+
+#### 2. Start ClawConnect
+
+```bash
+npm start
+```
+
+#### 3. Connect from the Browser
+
+1. Open [http://localhost:4200](http://localhost:4200)
+2. Click the **🖥️ Screen Share** tab
+3. Fill in the connection details:
+
+| Field | Value | Notes |
+|-------|-------|-------|
+| **Tailscale IP** | `100.x.y.z` | Your Mac's Tailscale IP (use `localhost` if connecting to yourself) |
+| **WebSocket Port** | `6080` | Default port for ws-proxy.js |
+| **Mac Username** | `sandeep` | Your macOS login username |
+| **Mac Password** | `••••••` | Your macOS login password |
+
+4. Click **Connect**
+5. Your Mac's desktop should appear in the viewer
+
+### Screen Share Controls
+
+| Button | Action |
+|--------|--------|
+| **⛶ Fullscreen** | Toggle fullscreen mode |
+| **⊞ Scale to Fit** | Toggle auto-scaling to fit the viewer |
+| **Ctrl+Alt+Del** | Send the key combination to the remote Mac |
+| **✕ Disconnect** | End the VNC session |
+
+### Troubleshooting Screen Share
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| "Connecting..." hangs forever | ws-proxy.js not running | Start proxy: `node ws-proxy.js 6080 localhost:5900` |
+| "Connecting..." then disconnects | Port 5900 not activated | Run the `kickstart` command in Step 1 |
+| "Authentication failure" | Wrong Mac username/password | Use your **macOS login** credentials, not a separate VNC password |
+| "Failed to fetch dynamically imported module" | noVNC files missing | Check that `public/novnc/core/rfb.js` exists |
+| Viewer shows black screen | macOS screen locked | Unlock the Mac's screen or log in |
+| Connection drops when accessing remotely | Firewall blocking port 6080 | Ensure Tailscale is connected; port 6080 must be reachable |
+
+---
+
 ## Design
 
 ClawConnect uses a premium dark theme with:
@@ -274,6 +410,9 @@ ClawConnect uses a premium dark theme with:
 | Styling | Vanilla CSS (custom properties) |
 | Fonts | Google Fonts (Inter, JetBrains Mono) |
 | Protocol | OpenClaw Gateway Protocol v3 (WebSocket) |
+| Remote Desktop | noVNC 1.5.0 (ESM, loaded from `public/`) |
+| VNC Proxy | Custom Node.js WebSocket-to-TCP (`ws-proxy.js`) |
+| Networking | Tailscale (secure P2P mesh VPN) |
 | State | Angular Signals |
 
 ---
