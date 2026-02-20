@@ -360,8 +360,8 @@ npm start
 |-------|-------|-------|
 | **Tailscale IP** | `100.x.y.z` | Your Mac's Tailscale IP (use `localhost` if connecting to yourself) |
 | **WebSocket Port** | `6080` | Default port for ws-proxy.js |
-| **Mac Username** | `sandeep` | Your macOS login username |
-| **Mac Password** | `••••••` | Your macOS login password |
+| **Mac Username** | `yourusername` | Your macOS login username |
+| **Mac Password** | `yourpassword` | Your macOS login password |
 
 4. Click **Connect**
 5. Your Mac's desktop should appear in the viewer
