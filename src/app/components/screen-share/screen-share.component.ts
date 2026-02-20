@@ -129,7 +129,7 @@ interface ScreenShareConfig {
               </div>
               <div class="prereq-item">
                 <span class="prereq-bullet">3</span>
-                Start websockify: <code>websockify 6080 localhost:5900</code>
+                Start proxy: <code>node ws-proxy.js 6080 localhost:5900</code>
               </div>
             </div>
           </div>
@@ -669,7 +669,7 @@ export class ScreenShareComponent implements OnDestroy, AfterViewInit {
                     this.statusMessage.set('Disconnected');
                     this.statusType.set('info');
                 } else {
-                    this.statusMessage.set('Connection lost — check websockify and Tailscale');
+                    this.statusMessage.set('Connection lost — check ws-proxy and Tailscale');
                     this.statusType.set('error');
                 }
             });
