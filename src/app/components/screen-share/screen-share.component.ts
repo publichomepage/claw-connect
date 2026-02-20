@@ -158,9 +158,18 @@ interface ScreenShareConfig {
     </div>
   `,
     styles: [`
+    :host {
+      display: flex;
+      flex: 1;
+      height: 100%;
+      min-height: 0;
+    }
+ 
     .screen-share-container {
       display: flex;
       flex-direction: column;
+      flex: 1;
+      width: 100%;
       height: 100%;
       gap: 0;
     }
@@ -357,18 +366,17 @@ interface ScreenShareConfig {
       position: relative;
       min-height: 200px;
       display: flex;
-      align-items: center;
-      justify-content: center;
+      flex-direction: column;
       transition: background 0.3s;
     }
-
+ 
     .viewer-area.active {
       background: #000;
     }
-
+ 
     .vnc-container {
       width: 100%;
-      height: 100%;
+      flex: 1;
       display: none;
     }
 
@@ -381,6 +389,7 @@ interface ScreenShareConfig {
       text-align: center;
       padding: 40px 20px;
       max-width: 420px;
+      margin: auto; /* To center it since flex alignment changed */
     }
 
     .placeholder-icon {
