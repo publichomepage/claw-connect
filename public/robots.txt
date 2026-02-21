@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://claw-connect.pages.dev/sitemap.xml

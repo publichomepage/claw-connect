@@ -19,6 +19,7 @@ import { ScreenShareService } from '../../services/screen-share.service';
           <span class="logo">🦞</span>
           <div class="header-info">
             <h1 class="header-title">ClawConnect</h1>
+            <p class="header-subtitle" style="display:none">Premium OpenClaw Chat Interface</p>
           </div>
         </div>
         <div class="header-right">
