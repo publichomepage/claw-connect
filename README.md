@@ -12,43 +12,46 @@ clawconnect has a very simple architecture, uses wss and you need a tailscale co
 
 ---
 
-## Quick Start
+## Quick Start (No Clone Required)
 
-### 1. Install & Configure
+The easiest way to get your Mac ready is using `npx`. This configures your Gateway and (optionally) starts the Screen Share proxy.
 
-```bash
-npm install
-npm run setup        # configures CORS, auth, and prints your token
-```
-
-### 2. Start OpenClaw Gateway
+### 1. Configure & Connect
 
 ```bash
+# 1. Configure CORS & get your token
+npx -y claw-connect-setup
+
+# 2. Start OpenClaw Gateway (if not running)
 openclaw start
+
+# 3. Expose via Tailscale Funnel
+tailscale funnel --https=8443 http://localhost:18789
 ```
 
-### 3. Expose via Tailscale Funnel (https://tailscale.com/)
+### 2. For Screen Share (Optional)
+
+In a new terminal, run the proxy and expose it:
 
 ```bash
-# Chat — exposes Gateway on port 8443
-tailscale funnel --bg --https=8443 http://localhost:18789
+# Run the proxy
+npx -y claw-connect-setup --proxy
 
-# Screen Share — start ws-proxy, then expose on port 443
-node ws-proxy.js 6080 localhost:5900 &
-tailscale funnel --bg 6080
+# Expose the proxy
+tailscale funnel 6080
 ```
 
-> **Tip:** Use `tailscale funnel status` to verify both funnels are active.
+---
 
-### 4. Connect
+## Connection Settings
 
-Open [claw.publichome.page](https://claw.publichome.page) and configure:
+Open [claw.publichome.page](https://claw.publichome.page) and enter:
 
 | Setting | Value |
 |---------|-------|
 | **Gateway Host** | `your-mac.tailnet.ts.net` |
 | **Gateway Port** | `8443` |
-| **Auth Token** | From `npm run setup` output |
+| **Auth Token** | From `npx` output above |
 
 For Screen Share:
 
