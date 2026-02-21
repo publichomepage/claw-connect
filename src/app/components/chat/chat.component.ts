@@ -775,6 +775,8 @@ import { ScreenShareService } from '../../services/screen-share.service';
     }
 
     .chat-footer {
+      width: 100%;
+      box-sizing: border-box;
       text-align: center;
       padding: 8px 10px 12px;
       font-size: 11px;
