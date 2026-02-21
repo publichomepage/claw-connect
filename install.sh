@@ -61,10 +61,9 @@ fi
 echo ""
 echo -e "${CYAN}${BOLD}Phase 2: Configuration${NC}"
 
-# Check if we are running in the repo or need to download the script
 if [ ! -f "./onboard.js" ]; then
     echo -e "${DIM}Downloading onboarding logic...${NC}"
-    curl -sLO https://raw.githubusercontent.com/OpenClaw/claw-connect/main/onboard.js
+    curl -sLO https://raw.githubusercontent.com/publichomepage/claw-connect/main/onboard.js
 fi
 
 # Run the onboarding logic
