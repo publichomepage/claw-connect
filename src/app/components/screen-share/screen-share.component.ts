@@ -94,13 +94,18 @@ import { ScreenShareService } from '../../services/screen-share.service';
         }
       </div>
 
-      @if (ss.status() === 'error') {
+      @if (ss.status() === 'error' && !errorDismissed()) {
         <div class="connection-error-banner">
           <span class="error-icon">⚠️</span>
           <div class="error-text">
             <strong>Connection Failed</strong>
             <span>{{ ss.statusMessage() || 'Ensure Tailscale is connected and the proxy is running.' }}</span>
           </div>
+          <button class="dismiss-btn" (click)="dismissError()" title="Dismiss">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+          </button>
         </div>
       }
 
@@ -509,6 +514,27 @@ import { ScreenShareService } from '../../services/screen-share.service';
       gap: 12px;
       animation: bannerSlideDown 0.3s cubic-bezier(0.22, 1, 0.36, 1);
       flex-shrink: 0;
+      position: relative;
+    }
+
+    .dismiss-btn {
+      background: transparent;
+      border: none;
+      color: rgba(255, 255, 255, 0.4);
+      padding: 4px;
+      margin: -4px -4px 0 0;
+      cursor: pointer;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .dismiss-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
     }
 
     @keyframes bannerSlideDown {
@@ -676,41 +702,41 @@ export class ScreenShareComponent implements AfterViewInit {
     this.configOpen.update(v => !v);
   }
 
-  async connect(): Promise<void> {
-    // Sanitize host — extract just the domain even if the user pasted a full URL
-    // or an error message containing a URL.
-    let cleanHost = this.host.trim();
+  readonly errorDismissed = signal<boolean>(false);
 
-    // Try to extract from a pasted URL first (e.g. "https://domain.com:443")
+  async connect(): Promise<void> {
+    // Sanitize host — extract just the domain
+    let cleanHost = this.host.trim();
     try {
       const urlMatch = cleanHost.match(/https?:\/\/[^\s]+/i) || cleanHost.match(/wss?:\/\/[^\s]+/i);
       if (urlMatch) {
         const url = new URL(urlMatch[0]);
         cleanHost = url.hostname;
       }
-    } catch {
-      // Fallback if URL parsing fails
-    }
+    } catch { }
 
-    // Fallback manual cleanup for things like "domain.com/" or "domain.com:443"
     if (cleanHost.startsWith('wss://')) cleanHost = cleanHost.substring(6);
     else if (cleanHost.startsWith('ws://')) cleanHost = cleanHost.substring(5);
     else if (cleanHost.startsWith('https://')) cleanHost = cleanHost.substring(8);
     else if (cleanHost.startsWith('http://')) cleanHost = cleanHost.substring(7);
 
-    // Strip trailing slashes and ports (e.g., "domain.com:443" -> "domain.com")
     cleanHost = cleanHost.split(':')[0].replace(/\/+$/, '');
-
     this.host = cleanHost;
+
     this.saveConfig();
+    this.errorDismissed.set(false);
     await this.ss.connect(
-      { host: cleanHost, port: this.port, username: this.username, password: this.password },
+      { host: this.host, port: this.port, username: this.username, password: this.password },
       this.vncContainer.nativeElement
     );
   }
 
   disconnect(): void {
     this.ss.disconnect();
+  }
+
+  dismissError(): void {
+    this.errorDismissed.set(true);
   }
 
   toggleFullscreen(): void {
@@ -739,15 +765,11 @@ export class ScreenShareComponent implements AfterViewInit {
         this.host = config.host || '';
         this.port = config.port || 6080;
         this.username = config.username || '';
-        this.password = config.password || '';
 
-        // Auto-migrate: over HTTPS, Tailscale funnel exposes ws-proxy on 443
         if (location.protocol === 'https:' && this.port === 6080) {
           this.port = 443;
         }
       }
-    } catch {
-      // Use defaults
-    }
+    } catch { }
   }
 }
