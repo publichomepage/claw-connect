@@ -581,6 +581,11 @@ export class OpenClawService {
     this.messages.update(msgs => msgs.map(m => m.isStreaming ? { ...m, isStreaming: false } : m));
   }
 
+  logout(): void {
+    this.disconnect();
+    this.clearMessages();
+  }
+
   clearMessages(): void {
     this.messages.set([]);
   }
