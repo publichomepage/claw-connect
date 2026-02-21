@@ -6,7 +6,7 @@
   },
   "newProjectRoot": "projects",
   "projects": {
-    "clawcoder": {
+    "ClawConnect": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:class": {
@@ -43,6 +43,7 @@
           "options": {
             "browser": "src/main.ts",
             "tsConfig": "tsconfig.app.json",
+            "outputPath": "dist/ClawConnect",
             "assets": [
               {
                 "glob": "**/*",
@@ -81,10 +82,10 @@
           "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "clawcoder:build:production"
+              "buildTarget": "ClawConnect:build:production"
             },
             "development": {
-              "buildTarget": "clawcoder:build:development"
+              "buildTarget": "ClawConnect:build:development"
             }
           },
           "defaultConfiguration": "development"

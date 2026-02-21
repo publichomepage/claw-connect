@@ -180,11 +180,11 @@ import { ScreenShareService } from '../../services/screen-share.service';
                         } @else {
                           Connect to your OpenClaw Gateway to start chatting.
                           <br />Configure your Gateway URL in Settings above.
-                          <div class="prereqs">
+                           <div class="prereqs">
                             <div class="prereq-title">Prerequisites:</div>
                             <div class="prereq-item">
                               <span class="prereq-bullet">1</span>
-                              <span class="prereq-text">Allow connections from your Cloudflare Pages domain in <code>openclaw.json</code> under <code>gateway.controlUi.allowedOrigins</code>.</span>
+                              <span class="prereq-text">Run <strong><code>npm run setup</code></strong> to auto-configure CORS and auth.</span>
                             </div>
                             <div class="prereq-item">
                               <span class="prereq-bullet">2</span>

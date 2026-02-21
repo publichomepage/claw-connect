@@ -165,51 +165,30 @@ The `extractContent()` helper in `openclaw.service.ts` recursively extracts read
 ### 1. Install Dependencies
 
 ```bash
-cd clawcoder
+cd ClawConnect
 npm install
 ```
 
 ### 2. Configure the Gateway
 
-ClawConnect is deployed securely on Cloudflare Pages. To allow the cloud-hosted app to securely connect to your local OpenClaw gateway, you must enable CORS in `~/.openclaw/openclaw.json` under the `gateway.controlUi.allowedOrigins` key, and allow token-based API authentication:
-
-```json
-{
-  "gateway": {
-    "controlUi": {
-      "allowInsecureAuth": true,
-      "allowedOrigins": [
-        "http://localhost:4200",
-        "https://claw-connect.pages.dev"
-      ]
-    }
-  }
-}
-```
-
-> **Note:** If you've already run ClawConnect setup, this config change was applied automatically. A backup exists at `~/.openclaw/openclaw.json.bak`.
-
-After changing config, restart the Gateway:
+ClawConnect needs to connect to your local OpenClaw Gateway from the browser. Run the setup script to automatically configure CORS and authentication:
 
 ```bash
-launchctl kickstart -k gui/$(id -u)/ai.openclaw.gateway
+npm run setup
 ```
 
-### 3. Get Your Auth Token
+This will:
+- Add `https://claw-connect.pages.dev` to `gateway.controlUi.allowedOrigins`
+- Enable browser-based token authentication
+- Back up your original config to `~/.openclaw/openclaw.json.bak`
 
-Your Gateway requires token authentication. The token is in `~/.openclaw/openclaw.json`:
+> **Security note:** Your auth token is still required for all connections, and traffic is encrypted end-to-end via Tailscale. The `allowInsecureAuth` flag simply allows browser clients (as opposed to CLI-only) to authenticate using your token over HTTPS.
+
+After setup, restart the Gateway:
 
 ```bash
-grep -A1 '"token"' ~/.openclaw/openclaw.json
+openclaw start
 ```
-
-For this installation, the token is:
-
-```
-e788f2fb967a4330a44cf0256dbd0e9aac53ab2408853d96
-```
-
-> **⚠️ Keep this token secret** — anyone with it can access your Gateway. If compromised, regenerate it via the OpenClaw CLI.
 
 ---
 
@@ -231,7 +210,7 @@ Open [http://localhost:4200](http://localhost:4200) in your browser.
 npm run build
 ```
 
-Output goes to `dist/clawcoder/`.
+Output goes to `dist/ClawConnect/`.
 
 ---
 
