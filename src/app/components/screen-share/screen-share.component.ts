@@ -121,7 +121,7 @@ import { ScreenShareService } from '../../services/screen-share.service';
               </div>
               <div class="prereq-item">
                 <span class="prereq-bullet">2</span>
-                <span class="prereq-text">Run the <a href="https://github.com/OpenClaw/claw-connect" target="_blank" class="magic-link"><strong>Magic Setup</strong></a> for automated status checks and configuration.</span>
+                <span class="prereq-text">Run the <strong>Magic Setup</strong> (<a href="https://github.com/OpenClaw/claw-connect/blob/main/install.sh" target="_blank" class="magic-link">macOS</a> / <a href="https://github.com/OpenClaw/claw-connect/blob/main/install.ps1" target="_blank" class="magic-link">Windows</a>) for automated status checks.</span>
               </div>
             </div>
           </div>
