@@ -234,6 +234,7 @@ import { ScreenShareService } from '../../services/screen-share.service';
       display: flex;
       flex-direction: column;
       height: 100vh;
+      height: 100dvh;
       padding: 20px;
       max-width: 100%;
       box-sizing: border-box;
