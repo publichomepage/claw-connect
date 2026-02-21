@@ -132,26 +132,26 @@ import { ScreenShareService } from '../../services/screen-share.service';
       <!-- Toolbar (shown when connected) -->
       @if (isConnected()) {
         <div class="toolbar">
-          <button class="tool-btn" (click)="toggleFullscreen()" title="Fullscreen">
+          <button class="tool-btn hide-text-mobile" (click)="toggleFullscreen()" title="Fullscreen">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
             </svg>
-            Fullscreen
+            <span class="btn-text">Fullscreen</span>
           </button>
-          <button class="tool-btn" (click)="ss.toggleScaleViewport()" title="Scale to Fit" [class.active]="ss.scaleViewport()">
+          <button class="tool-btn hide-text-mobile" (click)="ss.toggleScaleViewport()" title="Scale to Fit" [class.active]="ss.scaleViewport()">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
               <line x1="8" y1="21" x2="16" y2="21"/>
               <line x1="12" y1="17" x2="12" y2="21"/>
             </svg>
-            Scale to Fit
+            <span class="btn-text">Scale to Fit</span>
           </button>
-          <button class="tool-btn" (click)="ss.sendCtrlAltDel()" title="Send Ctrl+Alt+Del">
+          <button class="tool-btn hide-text-mobile" (click)="ss.sendCtrlAltDel()" title="Send Ctrl+Alt+Del">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="2" y="4" width="20" height="16" rx="2"/>
               <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 12h8M6 16h.01M18 16h.01"/>
             </svg>
-            Ctrl+Alt+Del
+            <span class="btn-text">Ctrl+Alt+Del</span>
           </button>
           <div class="toolbar-spacer"></div>
           <button class="tool-btn tool-btn-danger" (click)="disconnect()">
@@ -592,10 +592,20 @@ import { ScreenShareService } from '../../services/screen-share.service';
       }
 
       .toolbar {
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
+        padding: 12px;
+        gap: 6px;
       }
 
-      .toolbar-spacer { display: none; }
+      .hide-text-mobile .btn-text {
+        display: none;
+      }
+      
+      .tool-btn {
+        padding: 8px; /* Square buttons on mobile */
+      }
+
+      .toolbar-spacer { display: block; flex: 1; }
     }
   `]
 })
