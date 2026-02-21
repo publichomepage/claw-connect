@@ -1,6 +1,6 @@
 # 🦞 ClawConnect
 
-A premium web interface for [OpenClaw](https://openclaw.ai) — chat with your AI assistant and remotely view your Mac's screen, all from the browser. Built to help find a simpler solution for the browser and avoid polluting personal chat apps with tons of messages.
+A premium web interface for [OpenClaw](https://openclaw.ai) — chat with your AI assistant and remotely view your Mac's screen, all from the browser and without hoping between different apps. Built to help find a simpler solution for the browser and avoid polluting personal chat apps with tons of messages.
 
 **Live:** [claw.publichome.page](https://claw.publichome.page)
 
@@ -9,6 +9,40 @@ A premium web interface for [OpenClaw](https://openclaw.ai) — chat with your A
 ## Architecture
 
 clawconnect has a very simple architecture, uses wss and you need a tailscale connection / funnel .
+
+---
+
+## Magic Setup (macOS)
+
+The absolute easiest way to get started. This script installs Node, OpenClaw, Tailscale, and configures everything for you.
+
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/OpenClaw/claw-connect/main/install.sh)"
+```
+
+---
+
+## Magic Setup (Windows)
+
+Open PowerShell as Administrator and run:
+
+```powershell
+Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/OpenClaw/claw-connect/main/install.ps1'))
+```
+
+---
+
+## Alternative: Manual One-Liner
+
+If you already have prerequisites installed, you can use `npx` to just configure Gateway CORS and (optionally) start the Screen Share proxy.
+
+```bash
+# Configure Gateway & get your token
+npx -y claw-connect-onboard
+
+# To also start the Screen Share proxy
+npx -y claw-connect-onboard --proxy
+```
 
 ---
 
@@ -67,11 +101,11 @@ npm start              # Dev server at http://localhost:4200
 npm run build          # Production build → dist/ClawConnect/
 ```
 
-### Deploy to Cloudflare Pages
+## Deployment
 
 ```bash
 npm run build
-npx wrangler pages deploy dist/ClawConnect/browser --project-name=claw-connect
+# Deploy the contents of dist/ClawConnect/browser/ to your hosting provider
 ```
 
 ---
@@ -140,13 +174,27 @@ setup.js               # Auto-configuration script
 | Layer | Technology |
 |-------|-----------|
 | Framework | Angular 21 (standalone components, signals) |
-| Styling | Vanilla CSS (dark theme, glassmorphism) |
-| Fonts | Inter + JetBrains Mono |
 | Remote Desktop | noVNC 1.5.0 |
 | VNC Proxy | Node.js `ws` package |
 | Networking | Tailscale Funnel |
-| Hosting | Cloudflare Pages |
+| Hosting | Generic (Static) |
 
 ---
 
-*Private project — for personal use with OpenClaw.*
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## License
+
+Distributed under the MIT License. See `LICENSE` for more information.
+
+---
+
+*For use with [OpenClaw](https://openclaw.ai).*

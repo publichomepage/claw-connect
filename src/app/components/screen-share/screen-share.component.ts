@@ -117,11 +117,11 @@ import { ScreenShareService } from '../../services/screen-share.service';
               <div class="prereq-title">Prerequisites:</div>
               <div class="prereq-item">
                 <span class="prereq-bullet">1</span>
-                <span class="prereq-text">Enable Screen Sharing in macOS Settings</span>
+                <span class="prereq-text">Enable Screen Sharing in Desktop Settings</span>
               </div>
               <div class="prereq-item">
                 <span class="prereq-bullet">2</span>
-                <span class="prereq-text">Run <strong><code>npm run setup</code></strong> for Tailscale status & automated checks.</span>
+                <span class="prereq-text">Run the <strong>Magic Setup</strong> (<a href="https://github.com/OpenClaw/claw-connect/blob/main/install.sh" target="_blank" class="magic-link">macOS</a> / <a href="https://github.com/OpenClaw/claw-connect/blob/main/install.ps1" target="_blank" class="magic-link">Windows</a>) to create a Tailscale funnel.</span>
               </div>
             </div>
           </div>
@@ -483,6 +483,18 @@ import { ScreenShareService } from '../../services/screen-share.service';
       padding: 2px 6px;
       border-radius: 4px;
       color: #FF6B35;
+    }
+
+    .magic-link {
+      color: #FF6B35;
+      text-decoration: underline;
+      text-underline-offset: 4px;
+      transition: all 0.2s;
+    }
+
+    .magic-link:hover {
+      color: #FF4500;
+      opacity: 0.8;
     }
 
     /* Connection Error Banner */

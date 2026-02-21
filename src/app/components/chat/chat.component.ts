@@ -22,7 +22,15 @@ import { ScreenShareService } from '../../services/screen-share.service';
           </div>
         </div>
         <div class="header-right">
-          <!-- Connection status moved to Chat panel -->
+          @if (openClaw.isConnected()) {
+            <button class="logout-btn" (click)="logout()" title="Logout and clear settings">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <polyline points="16 17 21 12 16 7"></polyline>
+                <line x1="21" y1="12" x2="9" y2="12"></line>
+              </svg>
+            </button>
+          }
         </div>
       </div>
 
@@ -120,7 +128,7 @@ import { ScreenShareService } from '../../services/screen-share.service';
                           <div class="prereq-title">Prerequisites:</div>
                           <div class="prereq-item">
                             <span class="prereq-bullet">1</span>
-                            <span class="prereq-text">Run <strong><code>npm run setup</code></strong> to auto-configure CORS and auth.</span>
+                            <span class="prereq-text">Run the <strong>Magic Setup</strong> (<a href="https://github.com/OpenClaw/claw-connect/blob/main/install.sh" target="_blank" class="magic-link">macOS</a> / <a href="https://github.com/OpenClaw/claw-connect/blob/main/install.ps1" target="_blank" class="magic-link">Windows</a>) to create a Tailscale funnel.</span>
                           </div>
                         </div>
                       }
@@ -282,6 +290,27 @@ import { ScreenShareService } from '../../services/screen-share.service';
     .header-right {
       display: flex;
       align-items: center;
+      gap: 12px;
+    }
+
+    .logout-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      color: #999;
+      padding: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .logout-btn:hover {
+      background: rgba(244, 67, 54, 0.1);
+      border-color: rgba(244, 67, 54, 0.3);
+      color: #f44336;
+      transform: translateY(-1px);
     }
 
     /* Connection Status */
@@ -720,6 +749,18 @@ import { ScreenShareService } from '../../services/screen-share.service';
       color: #FF6B35;
     }
 
+    .magic-link {
+      color: #FF6B35;
+      text-decoration: underline;
+      text-underline-offset: 4px;
+      transition: all 0.2s;
+    }
+
+    .magic-link:hover {
+      color: #FF4500;
+      opacity: 0.8;
+    }
+
     .empty-description {
       font-size: 14px;
       color: #666;
@@ -1067,6 +1108,20 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
       this.sendMessage();
+    }
+  }
+
+  logout(): void {
+    if (confirm('Are you sure you want to logout? This will clear all connection settings.')) {
+      this.openClaw.logout();
+      this.ss.disconnect();
+
+      // Clear all connection-related storage
+      localStorage.removeItem('clawconnect_config');
+      localStorage.removeItem('clawconnect_screenshare');
+
+      // Force reload to completely reset the app state
+      window.location.reload();
     }
   }
 

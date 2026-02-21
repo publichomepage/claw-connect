@@ -2,7 +2,8 @@
   "name": "claw-connect",
   "version": "0.0.0",
   "bin": {
-    "claw-connect-setup": "./setup.js"
+    "claw-connect-setup": "./setup.js",
+    "claw-connect-onboard": "./onboard.js"
   },
   "scripts": {
     "ng": "ng",
@@ -25,7 +26,13 @@
       }
     ]
   },
-  "private": true,
+  "license": "MIT",
+  "author": "Sandeep",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OpenClaw/claw-connect.git"
+  },
+  "private": false,
   "packageManager": "npm@10.9.4",
   "dependencies": {
     "@angular/common": "^21.1.0",
