@@ -919,6 +919,14 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
       }
     });
 
+    // Auto-scroll when connection is established
+    effect(() => {
+      const status = this.openClaw.connectionStatus();
+      if (status === 'connected') {
+        this.shouldScroll = true;
+      }
+    });
+
     this.setupSpeechRecognition();
   }
 
