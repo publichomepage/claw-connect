@@ -160,7 +160,7 @@ log(`${DIM}${'─'.repeat(40)}${RESET}`);
 log(`1. [${hasOpenClaw ? 'X' : ' '}] Install OpenClaw CLI`);
 log(`2. [${hasTailscale ? 'X' : ' '}] Install Tailscale`);
 log(`3. [X] Configure CORS & Auth`);
-log(`4. [ ] Ensure OpenClaw Gateway is running`);
+log(`4. [ ] Ensure OpenClaw Gateway is running (check: ${BOLD}openclaw gateway status${RESET})`);
 log(`5. [ ] Run: ${CYAN}tailscale funnel --https=8443 http://localhost:18789${RESET}`);
 log(`6. [ ] For Screen Share: Run ${CYAN}node ws-proxy.js 6080 localhost:5900${RESET}`);
 log(`7. [ ] For Screen Share: Run ${CYAN}tailscale funnel 6080${RESET} (this exposes it on ${BOLD}port 443${RESET})`);

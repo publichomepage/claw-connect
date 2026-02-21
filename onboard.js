@@ -149,7 +149,7 @@ if (START_PROXY) {
     log('');
     log(`${BOLD}${GREEN}Ready!${RESET}`);
     log(`${DIM}${'─'.repeat(40)}${RESET}`);
-    log(`1. Ensure Gateway is running: ${CYAN}openclaw start${RESET}`);
+    log(`1. Ensure Gateway is running (check: ${CYAN}openclaw gateway status${RESET})`);
     log(`2. Expose via Tailscale: ${CYAN}tailscale funnel --https=8443 http://localhost:18789${RESET}`);
     log(`3. Connect at ${BOLD}${CLAWCONNECT_ORIGIN}${RESET}`);
     log('');

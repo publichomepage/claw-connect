@@ -58,7 +58,7 @@ npm run setup        # configures CORS, auth, and prints your token
 ### 2. Start OpenClaw Gateway
 
 ```bash
-openclaw start
+openclaw gateway status  # Verify it is running
 ```
 
 ### 3. Expose via Tailscale Funnel (https://tailscale.com/)
@@ -136,7 +136,7 @@ npm run build
 
 | Symptom | Fix |
 |---------|-----|
-| Status stays "Connecting" | Ensure Gateway is running: `openclaw start` |
+| Status stays "Connecting" | Ensure Gateway is running: `openclaw gateway status` |
 | "Connection Failed" error | Check Tailscale funnel: `tailscale funnel status` |
 | Wrong URL or token | Verify settings in `~/.openclaw/openclaw.json` |
 | "origin not allowed" | Run `npm run setup` to configure CORS |
