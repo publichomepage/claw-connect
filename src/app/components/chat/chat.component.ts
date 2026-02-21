@@ -153,18 +153,34 @@ import { ScreenShareService } from '../../services/screen-share.service';
                   rows="1"
                   (input)="autoResize($event)"
                 ></textarea>
-                <button
-                  class="send-button"
-                  [disabled]="!openClaw.isConnected() || !inputText.trim()"
-                  (click)="sendMessage()"
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="22" y1="2" x2="11" y2="13"></line>
-                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                  </svg>
-                </button>
+                  <button
+                    class="mic-button"
+                    [class.listening]="isListening()"
+                    [disabled]="!openClaw.isConnected()"
+                    (click)="toggleListening()"
+                    title="Voice to text"
+                  >
+                    <svg *ngIf="!isListening()" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+                      <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                      <line x1="12" y1="19" x2="12" y2="22"></line>
+                    </svg>
+                    <svg *ngIf="isListening()" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="9" y="9" width="6" height="6"></rect>
+                    </svg>
+                  </button>
+                  <button
+                    class="send-button"
+                    [disabled]="!openClaw.isConnected() || !inputText.trim()"
+                    (click)="sendMessage()"
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <line x1="22" y1="2" x2="11" y2="13"></line>
+                      <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                  </button>
+                </div>
               </div>
-            </div>
           </div>
         </div>
 
@@ -784,19 +800,22 @@ import { ScreenShareService } from '../../services/screen-share.service';
     .input-wrapper textarea::placeholder { color: #555; }
     .input-wrapper textarea:disabled { opacity: 0.4; }
 
-    .send-button {
+    .send-button, .mic-button {
       width: 40px;
       height: 40px;
       border: none;
       border-radius: 12px;
-      background: linear-gradient(135deg, #FF4500, #E63E00);
-      color: white;
-      cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
       transition: all 0.2s;
+      cursor: pointer;
+    }
+
+    .send-button {
+      background: linear-gradient(135deg, #FF4500, #E63E00);
+      color: white;
     }
 
     .send-button:hover:not(:disabled) {
@@ -806,6 +825,32 @@ import { ScreenShareService } from '../../services/screen-share.service';
 
     .send-button:active:not(:disabled) { transform: scale(0.95); }
     .send-button:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    .mic-button {
+      background: rgba(255, 255, 255, 0.08);
+      color: #b0b0b0;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .mic-button:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
+    }
+
+    .mic-button.listening {
+      background: rgba(244, 67, 54, 0.15);
+      border-color: rgba(244, 67, 54, 0.3);
+      color: #f44336;
+      animation: pulseMic 1.5s infinite;
+    }
+
+    @keyframes pulseMic {
+      0% { box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.4); }
+      70% { box-shadow: 0 0 0 10px rgba(244, 67, 54, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(244, 67, 54, 0); }
+    }
+
+    .mic-button:disabled { opacity: 0.3; cursor: not-allowed; }
 
     /* ==============================
        Responsive
@@ -836,8 +881,10 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   activeTab = signal<'chat' | 'screen'>('chat');
   desktopLayout = signal<'split' | 'chat-full' | 'screen-full'>('split');
   isMobile = signal(false);
+  isListening = signal(false);
   private shouldScroll = true;
   private mediaQuery!: MediaQueryList;
+  private recognition: any;
 
   constructor(public openClaw: OpenClawService, public ss: ScreenShareService) {
     // Auto-scroll when new messages arrive
@@ -847,6 +894,63 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
         this.shouldScroll = true;
       }
     });
+
+    this.setupSpeechRecognition();
+  }
+
+  private setupSpeechRecognition(): void {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      this.recognition = new SpeechRecognition();
+      this.recognition.continuous = true;
+      this.recognition.interimResults = true;
+
+      this.recognition.onstart = () => {
+        this.isListening.set(true);
+      };
+
+      this.recognition.onresult = (event: any) => {
+        let finalTranscript = '';
+        let interimTranscript = '';
+
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            finalTranscript += event.results[i][0].transcript;
+          } else {
+            interimTranscript += event.results[i][0].transcript;
+          }
+        }
+
+        if (finalTranscript) {
+          this.inputText += (this.inputText.endsWith(' ') || this.inputText.length === 0 ? '' : ' ') + finalTranscript;
+        }
+      };
+
+      this.recognition.onerror = () => {
+        this.isListening.set(false);
+      };
+
+      this.recognition.onend = () => {
+        this.isListening.set(false);
+      };
+    }
+  }
+
+  toggleListening(): void {
+    if (!this.recognition) {
+      alert('Voice recognition is not supported in this browser.');
+      return;
+    }
+
+    if (this.isListening()) {
+      this.recognition.stop();
+    } else {
+      try {
+        this.recognition.start();
+      } catch (e) {
+        // Handle case where it might already be started
+      }
+    }
   }
 
   ngOnInit(): void {
