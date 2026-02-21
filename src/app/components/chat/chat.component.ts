@@ -124,15 +124,13 @@ import { ScreenShareService } from '../../services/screen-share.service';
                     } @else {
                       Connect to your OpenClaw Gateway to start chatting.
                       <br />Configure your Gateway URL in Settings above.
-                      @if (!isMobile()) {
-                        <div class="prereqs">
-                          <div class="prereq-title">Prerequisites:</div>
-                          <div class="prereq-item">
-                            <span class="prereq-bullet">1</span>
-                            <span class="prereq-text">Run the <strong>Magic Setup</strong> (<a href="https://github.com/publichomepage/claw-connect/blob/main/install.sh" target="_blank" class="magic-link">macOS</a> / <a href="https://github.com/publichomepage/claw-connect/blob/main/install.ps1" target="_blank" class="magic-link">Windows</a>) to create a Tailscale funnel.</span>
-                          </div>
+                      <div class="prereqs">
+                        <div class="prereq-title">Prerequisites:</div>
+                        <div class="prereq-item">
+                          <span class="prereq-bullet">1</span>
+                          <span class="prereq-text">Run the <strong>Magic Setup</strong> (<a href="https://github.com/publichomepage/claw-connect/blob/main/install.sh" target="_blank" class="magic-link">macOS</a> / <a href="https://github.com/publichomepage/claw-connect/blob/main/install.ps1" target="_blank" class="magic-link">Windows</a>) to create a Tailscale funnel.</span>
                         </div>
-                      }
+                      </div>
                     }
                   </p>
                 </div>
@@ -696,6 +694,12 @@ import { ScreenShareService } from '../../services/screen-share.service';
       padding: 20px;
       margin-top: 24px;
       width: 100%;
+    }
+
+    @media (max-width: 480px) {
+      .prereqs {
+        padding: 15px;
+      }
     }
 
     .prereq-title {
