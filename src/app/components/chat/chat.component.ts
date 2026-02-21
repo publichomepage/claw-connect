@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild, AfterViewChecked, OnInit, OnDestroy, effect, signal, HostListener } from '@angular/core';
+import { Component, ElementRef, ViewChild, AfterViewChecked, OnInit, OnDestroy, effect, signal, computed, HostListener } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { OpenClawService, ConnectionConfig } from '../../services/openclaw.service';
@@ -22,7 +22,7 @@ import { ScreenShareService } from '../../services/screen-share.service';
           </div>
         </div>
         <div class="header-right">
-          @if (openClaw.isConnected()) {
+          @if (canLogout()) {
             <button class="logout-btn" (click)="logout()" title="Logout and clear settings">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
@@ -951,6 +951,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   desktopLayout = signal<'split' | 'chat-full' | 'screen-full'>('split');
   isMobile = signal(false);
   isListening = signal(false);
+  readonly canLogout = computed(() => this.openClaw.isConnected() || this.ss.status() === 'connected');
   private shouldScroll = true;
   private mediaQuery!: MediaQueryList;
   private recognition: any;
