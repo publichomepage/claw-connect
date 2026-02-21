@@ -8,6 +8,7 @@ export type ScreenShareStatus = 'disconnected' | 'connecting' | 'connected' | 'e
 export class ScreenShareService {
     status = signal<ScreenShareStatus>('disconnected');
     errorMessage = signal<string>('');
+    sharedHost = signal<string>('');
 
     updateStatus(newStatus: ScreenShareStatus, error: string = ''): void {
         this.status.set(newStatus);

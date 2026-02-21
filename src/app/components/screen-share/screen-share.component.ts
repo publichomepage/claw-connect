@@ -1,20 +1,20 @@
-import { Component, ElementRef, ViewChild, OnDestroy, signal, AfterViewInit } from '@angular/core';
+import { Component, ElementRef, ViewChild, OnDestroy, signal, AfterViewInit, effect } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { ScreenShareService } from '../../services/screen-share.service';
 
 interface ScreenShareConfig {
-    host: string;
-    port: number;
-    username: string;
-    password: string;
+  host: string;
+  port: number;
+  username: string;
+  password: string;
 }
 
 @Component({
-    selector: 'app-screen-share',
-    standalone: true,
-    imports: [CommonModule, FormsModule],
-    template: `
+  selector: 'app-screen-share',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  template: `
     <div class="screen-share-container">
       <!-- Config Panel -->
       <div class="config-panel" [class.collapsed]="isConnected()">
@@ -29,12 +29,12 @@ interface ScreenShareConfig {
             <div class="config-fields">
               <div class="field-row">
                 <div class="field">
-                  <label for="ts-host">Tailscale IP Address</label>
+                  <label for="ts-host">Tailscale Domain</label>
                   <input
                     type="text"
                     id="ts-host"
                     [(ngModel)]="host"
-                    placeholder="100.x.y.z"
+                    placeholder="e.g. tailscale-name"
                     (change)="saveConfig()"
                   />
                 </div>
@@ -94,6 +94,17 @@ interface ScreenShareConfig {
         }
       </div>
 
+      @if (ss.status() === 'error') {
+        <div class="connection-error-banner">
+          <span class="error-icon">⚠️</span>
+
+          <div class="error-text">
+            <strong>Connection Failed</strong>
+            <span>{{ statusMessage() || 'Ensure Tailscale is connected and the proxy is running.' }}</span>
+          </div>
+        </div>
+      }
+
       <!-- Status overlay removed (dot moved to header labels) -->
 
       <!-- VNC Viewer Area -->
@@ -109,15 +120,15 @@ interface ScreenShareConfig {
               <div class="prereq-title">Prerequisites:</div>
               <div class="prereq-item">
                 <span class="prereq-bullet">1</span>
-                Enable Screen Sharing in macOS Settings
+                <span class="prereq-text">Enable Screen Sharing in macOS Settings</span>
               </div>
               <div class="prereq-item">
                 <span class="prereq-bullet">2</span>
-                Run Tailscale on your Mac
+                <span class="prereq-text">Start proxy: <code>node ws-proxy.js 6080 localhost:5900</code></span>
               </div>
               <div class="prereq-item">
                 <span class="prereq-bullet">3</span>
-                Start proxy: <code>node ws-proxy.js 6080 localhost:5900</code>
+                <span class="prereq-text">Run <code>tailscale funnel 6080</code> and connect on <strong>port 443</strong></span>
               </div>
             </div>
           </div>
@@ -157,7 +168,7 @@ interface ScreenShareConfig {
       }
     </div>
   `,
-    styles: [`
+  styles: [`
     :host {
       display: flex;
       flex: 1;
@@ -282,6 +293,16 @@ interface ScreenShareConfig {
 
     .field input::placeholder {
       color: #555;
+    }
+
+    /* Hide number input spinners */
+    .field input[type="number"]::-webkit-inner-spin-button,
+    .field input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    .field input[type="number"] {
+      -moz-appearance: textfield;
     }
 
     .field input[type="number"] {
@@ -435,11 +456,20 @@ interface ScreenShareConfig {
 
     .prereq-item {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       gap: 10px;
       font-size: 13px;
       color: #aaa;
       margin-bottom: 8px;
+    }
+
+    .prereq-text {
+      flex: 1;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 4px;
+      line-height: 1.5;
     }
 
     .prereq-item:last-child { margin-bottom: 0; }
@@ -465,6 +495,50 @@ interface ScreenShareConfig {
       padding: 2px 6px;
       border-radius: 4px;
       color: #FF6B35;
+    }
+
+    /* Connection Error Banner */
+    .connection-error-banner {
+      margin: 12px 20px 0;
+      padding: 12px 16px;
+      background: rgba(244, 67, 54, 0.1);
+      border: 1px solid rgba(244, 67, 54, 0.2);
+      border-radius: 12px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      animation: bannerSlideDown 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+      flex-shrink: 0;
+    }
+
+    @keyframes bannerSlideDown {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .error-icon {
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .error-text {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .error-text strong {
+      color: #f44336;
+      font-size: 13px;
+      margin-bottom: 2px;
+    }
+
+    .error-text span {
+      color: #e0e0e0;
+      font-size: 12px;
+      line-height: 1.4;
+      word-wrap: break-word;
     }
 
     /* Toolbar */
@@ -538,207 +612,217 @@ interface ScreenShareConfig {
   `]
 })
 export class ScreenShareComponent implements OnDestroy, AfterViewInit {
-    @ViewChild('vncContainer') private vncContainer!: ElementRef<HTMLDivElement>;
+  @ViewChild('vncContainer') private vncContainer!: ElementRef<HTMLDivElement>;
 
-    host = '';
-    port = 6080;
-    username = '';
-    password = '';
+  host = '';
+  port = 6080;
+  username = '';
+  password = '';
 
-    readonly isConnected = signal(false);
-    readonly isConnecting = signal(false);
-    readonly configOpen = signal(true);
-    readonly statusMessage = signal('');
-    readonly scaleViewport = signal(true);
+  readonly isConnected = signal(false);
+  readonly isConnecting = signal(false);
+  readonly configOpen = signal(true);
+  readonly statusMessage = signal('');
+  readonly scaleViewport = signal(true);
 
-    private rfb: any = null;
-    private noVNCLoaded = false;
-    private RFBClass: any = null;
+  private rfb: any = null;
+  private noVNCLoaded = false;
+  private RFBClass: any = null;
 
-    constructor(public ss: ScreenShareService) {
-        this.loadConfig();
-    }
+  constructor(public ss: ScreenShareService) {
+    this.loadConfig();
 
-    ngAfterViewInit(): void {
-        this.loadNoVNC();
-    }
-
-    ngOnDestroy(): void {
-        this.disconnect();
-    }
-
-    toggleConfig(): void {
-        this.configOpen.update(v => !v);
-    }
-
-    async connect(): Promise<void> {
-        if (!this.host) return;
-
-        this.isConnecting.set(true);
-        this.ss.updateStatus('connecting');
-        this.statusMessage.set('Connecting to ' + this.host + ':' + this.port + '...');
+    // Link Tailscale Domain to Gateway Host changes
+    effect(() => {
+      const newHost = this.ss.sharedHost();
+      if (newHost && this.host !== newHost) {
+        this.host = newHost;
         this.saveConfig();
+      }
+    });
+  }
 
-        try {
-            await this.ensureNoVNCLoaded();
+  ngAfterViewInit(): void {
+    this.loadNoVNC();
+  }
 
-            if (this.rfb) {
-                this.rfb.disconnect();
-                this.rfb = null;
-            }
+  ngOnDestroy(): void {
+    this.disconnect();
+  }
 
-            const url = `ws://${this.host}:${this.port}`;
-            const container = this.vncContainer.nativeElement;
+  toggleConfig(): void {
+    this.configOpen.update(v => !v);
+  }
 
-            const creds: any = {};
-            if (this.username) creds.username = this.username;
-            if (this.password) creds.password = this.password;
+  async connect(): Promise<void> {
+    if (!this.host) return;
 
-            this.rfb = new this.RFBClass(container, url, {
-                credentials: Object.keys(creds).length > 0 ? creds : undefined,
-            });
+    this.isConnecting.set(true);
+    this.ss.updateStatus('connecting');
+    this.statusMessage.set('Connecting to ' + this.host + ':' + this.port + '...');
+    this.saveConfig();
 
-            this.rfb.scaleViewport = this.scaleViewport();
-            this.rfb.resizeSession = false;
-            this.rfb.clipViewport = true;
-            this.rfb.showDotCursor = true;
-            this.rfb.background = '#0a0a0f';
+    try {
+      await this.ensureNoVNCLoaded();
 
-            this.rfb.addEventListener('connect', () => {
-                this.isConnected.set(true);
-                this.isConnecting.set(false);
-                this.ss.updateStatus('connected');
-                this.statusMessage.set('Connected to ' + this.host);
-                this.configOpen.set(false);
-            });
+      if (this.rfb) {
+        this.rfb.disconnect();
+        this.rfb = null;
+      }
 
-            this.rfb.addEventListener('disconnect', (e: any) => {
-                this.isConnected.set(false);
-                this.isConnecting.set(false);
-                if (e.detail?.clean) {
-                    this.statusMessage.set('Disconnected');
-                    this.ss.updateStatus('disconnected');
-                } else {
-                    this.statusMessage.set('Connection lost — check ws-proxy and Tailscale');
-                    this.ss.updateStatus('error', 'Connection lost');
-                }
-            });
+      const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
+      const url = `${protocol}://${this.host}:${this.port}`;
+      const container = this.vncContainer.nativeElement;
 
-            this.rfb.addEventListener('credentialsrequired', (e: any) => {
-                const types: string[] = e.detail?.types || [];
-                const needsUsername = types.includes('username');
-                const needsPassword = types.includes('password');
+      const creds: any = {};
+      if (this.username) creds.username = this.username;
+      if (this.password) creds.password = this.password;
 
-                if ((needsUsername && !this.username) || (needsPassword && !this.password)) {
-                    const missing = [];
-                    if (needsUsername && !this.username) missing.push('Mac username');
-                    if (needsPassword && !this.password) missing.push('Mac password');
-                    this.statusMessage.set('Authentication required — enter ' + missing.join(' and ') + ' above');
-                    this.ss.updateStatus('error', 'Auth required');
-                    this.isConnecting.set(false);
-                    this.configOpen.set(true);
-                    return;
-                }
+      this.rfb = new this.RFBClass(container, url, {
+        credentials: Object.keys(creds).length > 0 ? creds : undefined,
+      });
 
-                const creds: any = {};
-                if (this.username) creds.username = this.username;
-                if (this.password) creds.password = this.password;
-                this.rfb.sendCredentials(creds);
-            });
+      this.rfb.scaleViewport = this.scaleViewport();
+      this.rfb.resizeSession = false;
+      this.rfb.clipViewport = true;
+      this.rfb.showDotCursor = true;
+      this.rfb.background = '#0a0a0f';
 
-            this.rfb.addEventListener('securityfailure', (e: any) => {
-                this.statusMessage.set('Authentication failed: ' + (e.detail?.reason || 'wrong password'));
-                this.ss.updateStatus('error', 'Auth failed');
-                this.isConnecting.set(false);
-                this.configOpen.set(true);
-            });
-        } catch (err: any) {
-            this.isConnecting.set(false);
-            this.statusMessage.set('Failed to connect: ' + (err.message || err));
-            this.ss.updateStatus('error', err.message);
-        }
-    }
+      this.rfb.addEventListener('connect', () => {
+        this.isConnected.set(true);
+        this.isConnecting.set(false);
+        this.ss.updateStatus('connected');
+        this.statusMessage.set('Connected to ' + this.host);
+        this.configOpen.set(false);
+      });
 
-    disconnect(): void {
-        if (this.rfb) {
-            try {
-                this.rfb.disconnect();
-            } catch {
-                // Ignore
-            }
-            this.rfb = null;
-        }
+      this.rfb.addEventListener('disconnect', (e: any) => {
         this.isConnected.set(false);
         this.isConnecting.set(false);
-        this.ss.updateStatus('disconnected');
-        this.statusMessage.set('Disconnected');
-        this.configOpen.set(true);
-    }
-
-    toggleFullscreen(): void {
-        const container = this.vncContainer?.nativeElement;
-        if (!container) return;
-
-        if (document.fullscreenElement) {
-            document.exitFullscreen();
+        if (e.detail?.clean) {
+          this.statusMessage.set('Disconnected');
+          this.ss.updateStatus('disconnected');
         } else {
-            container.requestFullscreen();
+          this.statusMessage.set('Connection lost — check ws-proxy and Tailscale');
+          this.ss.updateStatus('error', 'Connection lost');
         }
-    }
+      });
 
-    toggleScaleViewport(): void {
-        this.scaleViewport.update(v => !v);
-        if (this.rfb) {
-            this.rfb.scaleViewport = this.scaleViewport();
+      this.rfb.addEventListener('credentialsrequired', (e: any) => {
+        const types: string[] = e.detail?.types || [];
+        const needsUsername = types.includes('username');
+        const needsPassword = types.includes('password');
+
+        if ((needsUsername && !this.username) || (needsPassword && !this.password)) {
+          const missing = [];
+          if (needsUsername && !this.username) missing.push('Mac username');
+          if (needsPassword && !this.password) missing.push('Mac password');
+          this.statusMessage.set('Authentication required — enter ' + missing.join(' and ') + ' above');
+          this.ss.updateStatus('error', 'Auth required');
+          this.isConnecting.set(false);
+          this.configOpen.set(true);
+          return;
         }
-    }
 
-    sendCtrlAltDel(): void {
-        if (this.rfb) {
-            this.rfb.sendCtrlAltDel();
-        }
-    }
+        const creds: any = {};
+        if (this.username) creds.username = this.username;
+        if (this.password) creds.password = this.password;
+        this.rfb.sendCredentials(creds);
+      });
 
-    saveConfig(): void {
-        localStorage.setItem('clawconnect_screenshare', JSON.stringify({
-            host: this.host,
-            port: this.port,
-            username: this.username,
-            password: this.password,
-        }));
+      this.rfb.addEventListener('securityfailure', (e: any) => {
+        this.statusMessage.set('Authentication failed: ' + (e.detail?.reason || 'wrong password'));
+        this.ss.updateStatus('error', 'Auth failed');
+        this.isConnecting.set(false);
+        this.configOpen.set(true);
+      });
+    } catch (err: any) {
+      this.isConnecting.set(false);
+      this.statusMessage.set('Failed to connect: ' + (err.message || err));
+      this.ss.updateStatus('error', err.message);
     }
+  }
 
-    private loadConfig(): void {
-        try {
-            const stored = localStorage.getItem('clawconnect_screenshare');
-            if (stored) {
-                const config: ScreenShareConfig = JSON.parse(stored);
-                this.host = config.host || '';
-                this.port = config.port || 6080;
-                this.username = config.username || '';
-                this.password = config.password || '';
-            }
-        } catch {
-            // Use defaults
-        }
+  disconnect(): void {
+    if (this.rfb) {
+      try {
+        this.rfb.disconnect();
+      } catch {
+        // Ignore
+      }
+      this.rfb = null;
     }
+    this.isConnected.set(false);
+    this.isConnecting.set(false);
+    this.ss.updateStatus('disconnected');
+    this.statusMessage.set('Disconnected');
+    this.configOpen.set(true);
+  }
 
-    private async loadNoVNC(): Promise<void> {
-        if (this.noVNCLoaded) return;
-        try {
-            // Load noVNC RFB from local assets (public/novnc/core/)
-            const module = await (new Function('return import("/novnc/core/rfb.js")'))();
-            this.RFBClass = module.default;
-            this.noVNCLoaded = true;
-        } catch (err) {
-            console.warn('noVNC preload failed, will retry on connect:', err);
-        }
-    }
+  toggleFullscreen(): void {
+    const container = this.vncContainer?.nativeElement;
+    if (!container) return;
 
-    private async ensureNoVNCLoaded(): Promise<void> {
-        if (this.RFBClass) return;
-        const module = await (new Function('return import("/novnc/core/rfb.js")'))();
-        this.RFBClass = module.default;
-        this.noVNCLoaded = true;
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else {
+      container.requestFullscreen();
     }
+  }
+
+  toggleScaleViewport(): void {
+    this.scaleViewport.update(v => !v);
+    if (this.rfb) {
+      this.rfb.scaleViewport = this.scaleViewport();
+    }
+  }
+
+  sendCtrlAltDel(): void {
+    if (this.rfb) {
+      this.rfb.sendCtrlAltDel();
+    }
+  }
+
+  saveConfig(): void {
+    localStorage.setItem('clawconnect_screenshare', JSON.stringify({
+      host: this.host,
+      port: this.port,
+      username: this.username,
+      password: this.password,
+    }));
+  }
+
+  private loadConfig(): void {
+    try {
+      const stored = localStorage.getItem('clawconnect_screenshare');
+      if (stored) {
+        const config: ScreenShareConfig = JSON.parse(stored);
+        this.host = config.host || '';
+        this.port = config.port || 6080;
+        this.username = config.username || '';
+        this.password = config.password || '';
+      }
+    } catch {
+      // Use defaults
+    }
+  }
+
+  private async loadNoVNC(): Promise<void> {
+    if (this.noVNCLoaded) return;
+    try {
+      // Load noVNC RFB from local assets (public/novnc/core/)
+      const module = await (new Function('return import("/novnc/core/rfb.js")'))();
+      this.RFBClass = module.default;
+      this.noVNCLoaded = true;
+    } catch (err) {
+      console.warn('noVNC preload failed, will retry on connect:', err);
+    }
+  }
+
+  private async ensureNoVNCLoaded(): Promise<void> {
+    if (this.RFBClass) return;
+    const module = await (new Function('return import("/novnc/core/rfb.js")'))();
+    this.RFBClass = module.default;
+    this.noVNCLoaded = true;
+  }
 }
