@@ -326,7 +326,6 @@ export class SettingsComponent {
       host: this.gatewayHost,
       port: this.gatewayPort,
       authToken: this.authToken,
-      authPassword: this.authPassword,
     }));
   }
 

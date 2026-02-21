@@ -706,7 +706,6 @@ export class ScreenShareComponent implements AfterViewInit {
       host: this.host,
       port: this.port,
       username: this.username,
-      password: this.password,
     }));
   }
 
