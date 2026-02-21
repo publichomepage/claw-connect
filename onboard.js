@@ -84,6 +84,33 @@ function runProxy(wsPort = 6080, vncTarget = 'localhost:5900') {
         ws.on('close', () => vnc.end());
         ws.on('error', () => vnc.end());
     });
+
+    // Automate Funnel for Screen Share
+    setupFunnel(wsPort, wsPort);
+}
+
+/**
+ * Automate Tailscale Funnel
+ */
+function setupFunnel(localPort, publicPort = null) {
+    if (!checkCommand('tailscale')) return;
+
+    try {
+        log(`${DIM}Configuring Tailscale Funnel for port ${localPort}...${RESET}`);
+        // For screen share (6080) we want raw TCP funnel usually, but --http=6080 6080 works best for web components
+        const cmd = publicPort === 6080
+            ? `tailscale funnel --http=6080 6080`
+            : `tailscale funnel --https=8443 http://localhost:18789`;
+
+        // Run as async-style background so it doesn't block the script if it stays open, 
+        // but here we just want to ensure it's "set".
+        // Use spawn with detached for non-blocking if needed, but for 'setting' it might just return.
+        execSync(cmd, { stdio: 'inherit', timeout: 5000 });
+        success(`Tailscale Funnel configured for port ${localPort}`);
+    } catch (e) {
+        warn(`Could not automatically start Funnel for ${localPort}. You may need to run it manually.`);
+        info(`Manual command: ${CYAN}tailscale funnel ${localPort}${RESET}`);
+    }
 }
 
 log('');
@@ -137,6 +164,9 @@ if (!fs.existsSync(CONFIG_PATH)) {
             const token = config.gateway.auth.token;
             info(`Your auth token: ${GREEN}${BOLD}${token}${RESET} (copy this)`);
         }
+
+        // Automate Gateway Funnel (always try to ensure it's set up)
+        if (!DRY_RUN) setupFunnel(18789);
     } catch (err) {
         error(`Failed to update config: ${err.message}`);
     }
@@ -150,9 +180,8 @@ if (START_PROXY) {
     log(`${BOLD}${GREEN}Ready!${RESET}`);
     log(`${DIM}${'─'.repeat(40)}${RESET}`);
     log(`1. Ensure Gateway is running (check: ${CYAN}openclaw gateway status${RESET})`);
-    log(`2. Expose via Tailscale: ${CYAN}tailscale funnel --https=8443 http://localhost:18789${RESET}`);
-    log(`3. Connect at ${BOLD}${CLAWCONNECT_ORIGIN}${RESET}`);
+    log(`2. Connect at ${BOLD}${CLAWCONNECT_ORIGIN}${RESET}`);
     log('');
-    info(`Tip: Use ${BOLD}--proxy${RESET} to start the Screen Share proxy automatically.`);
+    info(`Tip: Use ${BOLD}--proxy${RESET} to start the Screen Share proxy and Funnel automatically.`);
     log('');
 }

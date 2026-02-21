@@ -61,15 +61,18 @@ npm run setup        # configures CORS, auth, and prints your token
 openclaw gateway status  # Verify it is running
 ```
 
-### 3. Expose via Tailscale Funnel (https://tailscale.com/)
+### 3. Start Connection & Funnel
 
 ```bash
-# Chat — exposes Gateway on port 8443
-tailscale funnel --bg --https=8443 http://localhost:18789
+# This script handles CORS and ensures your Gateway is exposed via Tailscale
+node onboard.js
+```
 
-# Screen Share — start ws-proxy, then expose on port 443
-node ws-proxy.js 6080 localhost:5900 &
-tailscale funnel --bg 6080
+### 4. Optional: Screen Share
+
+```bash
+# Starts the VNC proxy and exposes it on port 443 via Tailscale Funnel
+node onboard.js --proxy
 ```
 
 > **Tip:** Use `tailscale funnel status` to verify both funnels are active.
@@ -134,12 +137,13 @@ npm run build
 
 ### Chat
 
-| Symptom | Fix |
-|---------|-----|
-| Status stays "Connecting" | Ensure Gateway is running: `openclaw gateway status` |
-| "Connection Failed" error | Check Tailscale funnel: `tailscale funnel status` |
-| Wrong URL or token | Verify settings in `~/.openclaw/openclaw.json` |
-| "origin not allowed" | Run `npm run setup` to configure CORS |
+To start your connection:
+1. Ensure Gateway is running (check: `openclaw gateway status`)
+2. Connect at `https://claw.publichome.page`
+
+For Screen Share (optional):
+3. `node onboard.js --proxy` (starts proxy + exposes funnel)
+----------------------------------------
 
 ### Screen Share
 
