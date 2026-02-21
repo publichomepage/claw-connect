@@ -608,7 +608,7 @@ export class ScreenShareComponent implements AfterViewInit {
   username = '';
   password = '';
 
-  readonly configOpen = signal(true);
+  readonly configOpen = signal(false);
   readonly showAll = signal(false);
 
   readonly isConnected = computed(() => this.ss.status() === 'connected');
@@ -626,12 +626,16 @@ export class ScreenShareComponent implements AfterViewInit {
       }
     });
 
-    // Auto-manage config panel visibility based on connection state
+    // Auto-manage config panel visibility based on connection state.
+    // Only re-open on disconnect/error AFTER we've been connected at least
+    // once — otherwise the panel pops open on every fresh page load.
+    let wasConnected = false;
     effect(() => {
       const s = this.ss.status();
       if (s === 'connected') {
+        wasConnected = true;
         this.configOpen.set(false);
-      } else if (s === 'disconnected' || s === 'error') {
+      } else if (wasConnected && (s === 'disconnected' || s === 'error')) {
         this.configOpen.set(true);
       }
     });
