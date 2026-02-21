@@ -1,47 +1,14 @@
 # 🦞 ClawConnect
 
-A premium web interface for [OpenClaw](https://openclaw.ai) — chat with your AI assistant and remotely view your Mac's screen, all from the browser.
+A premium web interface for [OpenClaw](https://openclaw.ai) — chat with your AI assistant and remotely view your Mac's screen, all from the browser. Built to help find a simpler solution for the browser and avoid polluting personal chat apps with tons of messages.
 
-**Live:** [claw-connect.pages.dev](https://claw-connect.pages.dev)
+**Live:** [claw.publichome.page](https://claw.publichome.page)
 
 ---
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────┐
-│              ClawConnect  (Angular 21 SPA)               │
-│          Hosted on Cloudflare Pages (HTTPS)              │
-│                                                          │
-│   ┌────────────┐  ┌────────────┐  ┌──────────────────┐  │
-│   │    Chat     │  │  Messages  │  │   Screen Share   │  │
-│   │  Component  │  │  Component │  │    Component     │  │
-│   └─────┬──────┘  └─────┬──────┘  └────────┬─────────┘  │
-│         └───────┬───────┘                   │            │
-│      ┌──────────▼──────────┐     ┌──────────▼─────────┐  │
-│      │   OpenClawService   │     │   noVNC (RFB.js)   │  │
-│      │  (Gateway Proto v3) │     │   ESM from public/ │  │
-│      └──────────┬──────────┘     └──────────┬─────────┘  │
-└─────────────────┼──────────────────────────┼─────────────┘
-                  │ WSS                      │ WSS
-                  ▼                          ▼
-     ┌────────────────────┐     ┌────────────────────────┐
-     │  Tailscale Funnel  │     │   Tailscale Funnel     │
-     │       :8443        │     │        :443            │
-     └────────┬───────────┘     └───────────┬────────────┘
-              │                             │
-              ▼                             ▼
-     ┌────────────────────┐     ┌────────────────────────┐
-     │  OpenClaw Gateway  │     │  ws-proxy.js (Node.js) │
-     │  localhost:18789   │     │   WS:6080 → TCP:5900   │
-     └────────────────────┘     └───────────┬────────────┘
-                                            │ TCP
-                                            ▼
-                                 ┌────────────────────┐
-                                 │ macOS Screen Share  │
-                                 │   VNC on :5900     │
-                                 └────────────────────┘
-```
+clawconnect has a very simple architecture, uses wss and you need a tailscale connection / funnel .
 
 ---
 
@@ -60,7 +27,7 @@ npm run setup        # configures CORS, auth, and prints your token
 openclaw start
 ```
 
-### 3. Expose via Tailscale Funnel
+### 3. Expose via Tailscale Funnel (https://tailscale.com/)
 
 ```bash
 # Chat — exposes Gateway on port 8443
@@ -75,7 +42,7 @@ tailscale funnel --bg 6080
 
 ### 4. Connect
 
-Open [claw-connect.pages.dev](https://claw-connect.pages.dev) and configure:
+Open [claw.publichome.page](https://claw.publichome.page) and configure:
 
 | Setting | Value |
 |---------|-------|
