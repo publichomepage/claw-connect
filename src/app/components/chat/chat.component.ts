@@ -939,26 +939,28 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     if (SpeechRecognition) {
       this.recognition = new SpeechRecognition();
       this.recognition.continuous = true;
-      this.recognition.interimResults = true;
+      this.recognition.interimResults = false;
+
+      let lastProcessedIndex = 0;
 
       this.recognition.onstart = () => {
         this.isListening.set(true);
+        lastProcessedIndex = 0;
       };
 
       this.recognition.onresult = (event: any) => {
         let finalTranscript = '';
-        let interimTranscript = '';
 
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
+        for (let i = lastProcessedIndex; i < event.results.length; ++i) {
           if (event.results[i].isFinal) {
             finalTranscript += event.results[i][0].transcript;
-          } else {
-            interimTranscript += event.results[i][0].transcript;
+            lastProcessedIndex = i + 1;
           }
         }
 
         if (finalTranscript) {
-          this.inputText += (this.inputText.endsWith(' ') || this.inputText.length === 0 ? '' : ' ') + finalTranscript;
+          const cleanText = finalTranscript.trim();
+          this.inputText += (this.inputText.endsWith(' ') || this.inputText.length === 0 ? '' : ' ') + cleanText + ' ';
         }
       };
 
