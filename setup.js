@@ -14,7 +14,7 @@ const os = require('os');
 
 const CONFIG_PATH = path.join(os.homedir(), '.openclaw', 'openclaw.json');
 const BACKUP_PATH = CONFIG_PATH + '.bak';
-const CLAWCONNECT_ORIGIN = 'https://claw-connect.pages.dev';
+const CLAWCONNECT_ORIGIN = 'https://claw.publichome.page';
 const LOCALHOST_ORIGIN = 'http://localhost:4200';
 
 // Colors for terminal output
@@ -144,5 +144,5 @@ log(`5. [ ] Run: ${CYAN}tailscale funnel --https=8443 http://localhost:18789${RE
 log(`6. [ ] For Screen Share: ${CYAN}node ws-proxy.js 6080 localhost:5900${RESET}`);
 log(`7. [ ] For Screen Share: ${CYAN}tailscale funnel 6080${RESET}`);
 log('');
-log(`${BOLD}Ready!${RESET} Open ${CYAN}https://claw-connect.pages.dev${RESET} to connect.`);
+log(`${BOLD}Ready!${RESET} Open ${CYAN}https://claw.publichome.page${RESET} to connect.`);
 log('');

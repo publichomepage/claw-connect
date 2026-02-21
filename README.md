@@ -178,7 +178,7 @@ npm run setup
 ```
 
 This will:
-- Add `https://claw-connect.pages.dev` to `gateway.controlUi.allowedOrigins`
+- Add `https://claw.publichome.page` to `gateway.controlUi.allowedOrigins`
 - Enable browser-based token authentication
 - Back up your original config to `~/.openclaw/openclaw.json.bak`
 
@@ -232,7 +232,7 @@ tailscale funnel --https=8443 http://localhost:18789
 
 ### Step 3: Connect via ClawConnect
 
-1. Open [ClawConnect](https://claw-connect.pages.dev)
+1. Open [ClawConnect](https://claw.publichome.page)
 2. Click **Connection Settings** to expand the panel
 3. Set **Gateway Host** to your Tailscale hostname (e.g., `mac-mini.tailscale.net`)
 4. Set **Gateway Port** to `8443`
@@ -337,7 +337,7 @@ tailscale funnel 6080
 
 #### 3. Connect from the Browser
 
-1. Open [ClawConnect](https://claw-connect.pages.dev)
+1. Open [ClawConnect](https://claw.publichome.page)
 2. Click the **🖥️ Screen Share** tab
 3. Fill in the connection details:
 
