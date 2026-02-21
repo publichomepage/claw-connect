@@ -60,11 +60,8 @@ Write-Host -ForegroundColor Gray "Starting Screen Share Proxy in background..."
 Start-Process -FilePath "node" -ArgumentList "onboard.js", "--proxy" -WindowStyle Hidden
 
 Write-Host ""
-Write-Host -ForegroundColor Green "`n✨ Ready!"
+Write-Host -ForegroundColor Green "`n✨ Setup Complete!"
 Write-Host -ForegroundColor Gray "----------------------------------------"
-Write-Host "ClawConnect is now running in the background:"
-Write-Host "1. Gateway Status:  openclaw gateway status"
-Write-Host "2. Funnel Status:   tailscale funnel status"
-Write-Host "3. Connect at:      https://claw.publichome.page"
+node onboard.js --status
 Write-Host -ForegroundColor Gray "----------------------------------------"
 Write-Host ""

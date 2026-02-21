@@ -74,12 +74,8 @@ echo -e "${DIM}Starting Screen Share Proxy in background...${NC}"
 node onboard.js --proxy > /dev/null 2>&1 &
 
 echo ""
-echo -e "${GREEN}${BOLD}✨ Ready!${NC}"
+echo -e "${GREEN}${BOLD}✨ Setup Complete!${NC}"
 echo -e "${DIM}----------------------------------------${NC}"
-echo -e "ClawConnect is now running in the background:"
-echo -e "1. Gateway Status:  ${BOLD}openclaw gateway status${NC}"
-echo -e "2. Funnel Status:   ${BOLD}tailscale funnel status${NC}"
-echo -e "3. Connect at:      ${CYAN}${BOLD}https://claw.publichome.page${NC}"
+node onboard.js --status
 echo -e "${DIM}----------------------------------------${NC}"
-echo -e "${YELLOW}Tip: Screen sharing is active and backgrounded.${NC}"
 echo ""

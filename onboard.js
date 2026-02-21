@@ -20,6 +20,7 @@ const CONFIG_PATH = path.join(os.homedir(), '.openclaw', 'openclaw.json');
 const CLAWCONNECT_ORIGIN = 'https://claw.publichome.page';
 const DRY_RUN = process.argv.includes('--dry-run');
 const START_PROXY = process.argv.includes('--proxy') || process.argv.includes('--all');
+const SHOW_STATUS = process.argv.includes('--status');
 
 // Colors
 const GREEN = '\x1b[32m';
@@ -171,16 +172,58 @@ if (!fs.existsSync(CONFIG_PATH)) {
     }
 }
 
-// --- 3. Summary ---
-if (START_PROXY) {
+/**
+ * Print Live Status Summary
+ */
+function printStatus() {
+    log(`${BOLD}🦞 ClawConnect Live Status${RESET}`);
+    log(`${DIM}${'─'.repeat(40)}${RESET}`);
+
+    // 1. Gateway
+    try {
+        const status = execSync('openclaw gateway status', { encoding: 'utf-8' });
+        if (status.includes('running') || status.includes('ONLINE')) {
+            success(`Gateway: ${GREEN}${BOLD}ONLINE${RESET}`);
+        } else {
+            warn(`Gateway: ${YELLOW}NOT RUNNING${RESET}`);
+        }
+    } catch (e) {
+        error(`Gateway: ${RED}FAILED TO CHECK${RESET}`);
+    }
+
+    // 2. Funnels
+    try {
+        const funnel = execSync('tailscale funnel status', { encoding: 'utf-8' });
+        const hasGateway = funnel.includes('18789');
+        const hasProxy = funnel.includes('6080');
+
+        if (hasGateway) success(`Chat Funnel: ${GREEN}${BOLD}ACTIVE${RESET} (port 8443)`);
+        else warn(`Chat Funnel: ${YELLOW}INACTIVE${RESET}`);
+
+        if (hasProxy) success(`Screen Funnel: ${GREEN}${BOLD}ACTIVE${RESET} (port 443)`);
+        else warn(`Screen Funnel: ${YELLOW}INACTIVE${RESET}`);
+
+        if (funnel.includes('.ts.net')) {
+            const domain = funnel.match(/[a-z0-9-]+\.[a-z0-9-]+\.ts\.net/i);
+            if (domain) info(`Public Domain: ${CYAN}${BOLD}${domain[0]}${RESET}`);
+        }
+    } catch (e) {
+        error(`Funnels: ${RED}OFFLINE${RESET} (Tailscale not running?)`);
+    }
+
+    log(`${DIM}${'─'.repeat(40)}${RESET}`);
+    log(`Connect at: ${BOLD}${CLAWCONNECT_ORIGIN}${RESET}`);
+    log('');
+}
+
+// --- 4. Main Actions ---
+if (SHOW_STATUS) {
+    printStatus();
+} else if (START_PROXY) {
     runProxy();
 } else {
     log('');
     log(`${BOLD}${GREEN}Ready!${RESET}`);
     log(`${DIM}${'─'.repeat(40)}${RESET}`);
-    log(`1. Ensure Gateway is running (check: ${CYAN}openclaw gateway status${RESET})`);
-    log(`2. Connect at ${BOLD}${CLAWCONNECT_ORIGIN}${RESET}`);
-    log('');
-    info(`Tip: Use ${BOLD}--proxy${RESET} to start the Screen Share proxy and Funnel automatically.`);
-    log('');
+    printStatus();
 }
