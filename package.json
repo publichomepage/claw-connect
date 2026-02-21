@@ -2,7 +2,8 @@
   "name": "claw-connect",
   "version": "0.0.0",
   "bin": {
-    "claw-connect-setup": "./setup.js"
+    "claw-connect-setup": "./setup.js",
+    "claw-connect-onboard": "./onboard.js"
   },
   "scripts": {
     "ng": "ng",
