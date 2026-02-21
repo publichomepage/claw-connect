@@ -17,7 +17,7 @@ clawconnect has a very simple architecture, uses wss and you need a tailscale co
 The absolute easiest way to get started. This script installs Node, OpenClaw, Tailscale, and configures everything for you.
 
 ```bash
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/OpenClaw/claw-connect/main/install.sh)"
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/publichomepage/claw-connect/main/install.sh)"
 ```
 
 ---
@@ -27,7 +27,7 @@ The absolute easiest way to get started. This script installs Node, OpenClaw, Ta
 Open PowerShell as Administrator and run:
 
 ```powershell
-Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/OpenClaw/claw-connect/main/install.ps1'))
+Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/publichomepage/claw-connect/main/install.ps1'))
 ```
 
 ---

@@ -128,7 +128,7 @@ import { ScreenShareService } from '../../services/screen-share.service';
                           <div class="prereq-title">Prerequisites:</div>
                           <div class="prereq-item">
                             <span class="prereq-bullet">1</span>
-                            <span class="prereq-text">Run the <strong>Magic Setup</strong> (<a href="https://github.com/OpenClaw/claw-connect/blob/main/install.sh" target="_blank" class="magic-link">macOS</a> / <a href="https://github.com/OpenClaw/claw-connect/blob/main/install.ps1" target="_blank" class="magic-link">Windows</a>) to create a Tailscale funnel.</span>
+                            <span class="prereq-text">Run the <strong>Magic Setup</strong> (<a href="https://github.com/publichomepage/claw-connect/blob/main/install.sh" target="_blank" class="magic-link">macOS</a> / <a href="https://github.com/publichomepage/claw-connect/blob/main/install.ps1" target="_blank" class="magic-link">Windows</a>) to create a Tailscale funnel.</span>
                           </div>
                         </div>
                       }

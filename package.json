@@ -30,7 +30,7 @@
   "author": "Sandeep",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/OpenClaw/claw-connect.git"
+    "url": "git+https://github.com/publichomepage/claw-connect.git"
   },
   "private": false,
   "packageManager": "npm@10.9.4",
