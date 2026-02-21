@@ -230,6 +230,8 @@ Since ClawConnect is hosted in the browser (HTTPS), you must securely expose the
 tailscale funnel --https=8443 http://localhost:18789
 ```
 
+> **Tip:** Tailscale will output your public domain name (e.g., `your-mac.tailnet-name.ts.net`). Copy this for the next step.
+
 ### Step 3: Connect via ClawConnect
 
 1. Open [ClawConnect](https://claw.publichome.page)
@@ -334,6 +336,8 @@ Expose the WebSocket proxy securely over HTTPS using Tailscale Funnel. By defaul
 ```bash
 tailscale funnel 6080
 ```
+
+> **Tip:** Note the public domain name provided by Tailscale. This is what you'll enter in the **Tailscale Domain** field.
 
 #### 3. Connect from the Browser
 

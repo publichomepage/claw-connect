@@ -151,5 +151,8 @@ log(`5. [ ] Run: ${CYAN}tailscale funnel --https=8443 http://localhost:18789${RE
 log(`6. [ ] For Screen Share: Run ${CYAN}node ws-proxy.js 6080 localhost:5900${RESET}`);
 log(`7. [ ] For Screen Share: Run ${CYAN}tailscale funnel 6080${RESET} (this exposes it on ${BOLD}port 443${RESET})`);
 log('');
+info(`Tip: After starting a funnel, Tailscale will show your public domain`);
+info(`(e.g., ${BOLD}your-mac.tailnet-abc.ts.net${RESET}). Use this in ClawConnect!`);
+log('');
 log(`${BOLD}Ready!${RESET} Open ${CYAN}https://claw.publichome.page${RESET} to connect.`);
 log('');
