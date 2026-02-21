@@ -26,7 +26,7 @@ import { ScreenShareService } from '../../services/screen-share.service';
         </div>
       </div>
 
-      <!-- MOBILE: Tab Layout (< 768px) -->
+      <!-- Mobile Tab Bar (only visible on mobile) -->
       @if (isMobile()) {
         <div class="tab-bar">
           <button
@@ -48,10 +48,44 @@ import { ScreenShareService } from '../../services/screen-share.service';
             <span class="status-dot mini" [class]="'status-' + ss.status()"></span>
           </button>
         </div>
+      }
 
-        @if (activeTab() === 'chat') {
-          <div class="mobile-chat-content">
-            <!-- Status moved to tab button -->
+      <!--
+        Unified main layout for both mobile and desktop.
+        panel-offscreen (not [hidden]/display:none) is used so the VNC canvas
+        always has real dimensions — display:none would collapse it to 0×0 and
+        cause noVNC to drop the connection on every layout switch.
+      -->
+      <div class="main-layout"
+           [class.is-mobile]="isMobile()"
+           [class.layout-split]="!isMobile() && desktopLayout() === 'split'"
+           [class.layout-chat-full]="!isMobile() && desktopLayout() === 'chat-full'"
+           [class.layout-screen-full]="!isMobile() && desktopLayout() === 'screen-full'">
+
+        <!-- Chat Panel -->
+        <div class="panel chat-panel"
+             [class.panel-inactive]="isMobile() && activeTab() !== 'chat'"
+             [class.collapsed]="!isMobile() && desktopLayout() === 'screen-full'">
+
+          <!-- Desktop collapsed strip (screen-full mode) -->
+          <div class="panel-strip"
+               [hidden]="isMobile() || desktopLayout() !== 'screen-full'"
+               (click)="desktopLayout.set('split')">
+            <span class="strip-icon">💬</span>
+            <span class="strip-label">Chat</span>
+            <span class="status-dot mini strip-dot" [class]="'status-' + openClaw.connectionStatus()"></span>
+          </div>
+
+          <!-- Chat content -->
+          <div class="panel-content"
+               [hidden]="!isMobile() && desktopLayout() === 'screen-full'">
+            @if (!isMobile()) {
+              <div class="panel-header-mini">
+                <span class="panel-icon">💬</span>
+                <span class="panel-title">Chat</span>
+                <span class="status-dot mini" [class]="'status-' + openClaw.connectionStatus()"></span>
+              </div>
+            }
             <div class="settings-wrapper">
               <app-settings
                 (connectRequest)="onConnect($event)"
@@ -81,6 +115,15 @@ import { ScreenShareService } from '../../services/screen-share.service';
                     } @else {
                       Connect to your OpenClaw Gateway to start chatting.
                       <br />Configure your Gateway URL in Settings above.
+                      @if (!isMobile()) {
+                        <div class="prereqs">
+                          <div class="prereq-title">Prerequisites:</div>
+                          <div class="prereq-item">
+                            <span class="prereq-bullet">1</span>
+                            <span class="prereq-text">Run <strong><code>npm run setup</code></strong> to auto-configure CORS and auth.</span>
+                          </div>
+                        </div>
+                      }
                     }
                   </p>
                 </div>
@@ -123,147 +166,45 @@ import { ScreenShareService } from '../../services/screen-share.service';
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- Divider (desktop split mode only) -->
+        @if (!isMobile() && desktopLayout() === 'split') {
+          <div class="panel-divider">
+            <button class="divider-btn left" (click)="desktopLayout.set('screen-full')" title="Expand Screen Share">❮</button>
+            <div class="divider-handle"></div>
+            <button class="divider-btn right" (click)="desktopLayout.set('chat-full')" title="Expand Chat">❯</button>
+          </div>
         }
 
-        @if (activeTab() === 'screen') {
-          <app-screen-share />
-        }
-      }
+        <!-- Screen Share Panel -->
+        <div class="panel screen-panel"
+             [class.panel-inactive]="isMobile() && activeTab() !== 'screen'"
+             [class.collapsed]="!isMobile() && desktopLayout() === 'chat-full'">
 
-      <!-- DESKTOP: Split Layout (≥ 768px) -->
-      @if (!isMobile()) {
-        <div class="split-layout" [class]="'layout-' + desktopLayout()">
-
-          <!-- Chat Panel -->
-          <div class="panel chat-panel" [class.collapsed]="desktopLayout() === 'screen-full'">
-            @if (desktopLayout() === 'screen-full') {
-              <!-- Collapsed sidebar strip -->
-              <div class="panel-strip" (click)="desktopLayout.set('split')">
-                <span class="strip-icon">💬</span>
-                <span class="strip-label">Chat</span>
-                <span class="status-dot mini strip-dot" [class]="'status-' + openClaw.connectionStatus()"></span>
-              </div>
-            } @else {
-              <!-- Full chat content -->
-              <div class="panel-content">
-                <div class="panel-header-mini">
-                  <span class="panel-icon">💬</span>
-                  <span class="panel-title">Chat</span>
-                  <span class="status-dot mini" [class]="'status-' + openClaw.connectionStatus()"></span>
-                </div>
-                <div class="settings-wrapper">
-                  <app-settings
-                    (connectRequest)="onConnect($event)"
-                    (disconnectRequest)="onDisconnect()"
-                    (hostChange)="onGatewayHostChange($event)"
-                  />
-                </div>
-
-                @if (openClaw.connectionStatus() === 'error') {
-                  <div class="connection-error-banner">
-                    <span class="error-icon">⚠️</span>
-                    <div class="error-text">
-                      <strong>Connection Failed</strong>
-                      <span>Could not connect to the OpenClaw Gateway. Please check your settings and ensure the Gateway is running.</span>
-                    </div>
-                  </div>
-                }
-
-                <div class="messages-area" #messagesContainer>
-                  @if (openClaw.messages().length === 0) {
-                    <div class="empty-state">
-                      <div class="empty-icon">🦞</div>
-                      <h2 class="empty-title">Welcome to ClawConnect</h2>
-                      <p class="empty-description">
-                        @if (openClaw.isConnected()) {
-                          Your OpenClaw Gateway is connected. Start chatting!
-                        } @else {
-                          Connect to your OpenClaw Gateway to start chatting.
-                          <br />Configure your Gateway URL in Settings above.
-                           <div class="prereqs">
-                            <div class="prereq-title">Prerequisites:</div>
-                            <div class="prereq-item">
-                              <span class="prereq-bullet">1</span>
-                              <span class="prereq-text">Run <strong><code>npm run setup</code></strong> to auto-configure CORS and auth.</span>
-                            </div>
-                          </div>
-                        }
-                      </p>
-                    </div>
-                  }
-                  @for (message of openClaw.messages(); track message.id) {
-                    <app-message [message]="message" />
-                  }
-                  @if (openClaw.isTyping()) {
-                    <div class="typing-indicator">
-                      <span class="typing-avatar">🦞</span>
-                      <div class="typing-dots">
-                        <span class="dot"></span>
-                        <span class="dot"></span>
-                        <span class="dot"></span>
-                      </div>
-                    </div>
-                  }
-                </div>
-                <div class="input-area">
-                  <div class="input-wrapper">
-                    <textarea
-                      #messageInput
-                      [(ngModel)]="inputText"
-                      placeholder="{{ openClaw.isConnected() ? 'Type a message...' : 'Connect to Gateway first...' }}"
-                      [disabled]="!openClaw.isConnected()"
-                      (keydown)="handleKeyDown($event)"
-                      rows="1"
-                      (input)="autoResize($event)"
-                    ></textarea>
-                    <button
-                      class="send-button"
-                      [disabled]="!openClaw.isConnected() || !inputText.trim()"
-                      (click)="sendMessage()"
-                    >
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="22" y1="2" x2="11" y2="13"></line>
-                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            }
+          <!-- Desktop collapsed strip (chat-full mode) -->
+          <div class="panel-strip"
+               [hidden]="isMobile() || desktopLayout() !== 'chat-full'"
+               (click)="desktopLayout.set('split')">
+            <span class="strip-icon">🖥️</span>
+            <span class="strip-label">Screen</span>
+            <span class="status-dot mini strip-dot" [class]="'status-' + ss.status()"></span>
           </div>
 
-          <!-- Divider -->
-          @if (desktopLayout() === 'split') {
-            <div class="panel-divider">
-              <button class="divider-btn left" (click)="desktopLayout.set('screen-full')" title="Expand Screen Share">❮</button>
-              <div class="divider-handle"></div>
-              <button class="divider-btn right" (click)="desktopLayout.set('chat-full')" title="Expand Chat">❯</button>
-            </div>
-          }
-
-          <!-- Screen Share Panel -->
-          <div class="panel screen-panel" [class.collapsed]="desktopLayout() === 'chat-full'">
-            @if (desktopLayout() === 'chat-full') {
-              <!-- Collapsed sidebar strip -->
-              <div class="panel-strip" (click)="desktopLayout.set('split')">
-                <span class="strip-icon">🖥️</span>
-                <span class="strip-label">Screen</span>
-                <span class="status-dot mini strip-dot" [class]="'status-' + ss.status()"></span>
-              </div>
-            } @else {
-              <!-- Full screen share content -->
-              <div class="panel-content">
-                <div class="panel-header-mini">
-                  <span class="panel-icon">🖥️</span>
-                  <span class="panel-title">Screen Share</span>
-                  <span class="status-dot mini" [class]="'status-' + ss.status()"></span>
-                </div>
-                <app-screen-share />
+          <!-- Screen share content — always kept in DOM to preserve VNC connection -->
+          <div class="panel-content"
+               [hidden]="!isMobile() && desktopLayout() === 'chat-full'">
+            @if (!isMobile()) {
+              <div class="panel-header-mini">
+                <span class="panel-icon">🖥️</span>
+                <span class="panel-title">Screen Share</span>
+                <span class="status-dot mini" [class]="'status-' + ss.status()"></span>
               </div>
             }
+            <app-screen-share />
           </div>
         </div>
-      }
+      </div>
     </div>
   `,
   styles: [`
@@ -400,24 +341,53 @@ import { ScreenShareService } from '../../services/screen-share.service';
 
     .tab-icon { font-size: 15px; }
 
-    /* Mobile chat fills remaining space */
-    .mobile-chat-content {
-      display: flex;
-      flex-direction: column;
-      flex: 1;
-      min-height: 0;
-    }
+    /* Ensure [hidden] always wins over display classes */
+    [hidden] { display: none !important; }
 
     /* ==============================
-       Desktop Split Layout
+       Unified Main Layout
        ============================== */
-    .split-layout {
+    .main-layout {
       display: flex;
       flex: 1;
-      gap: 0;
       min-height: 0;
-      overflow: hidden;
+      overflow: hidden; /* clips the off-screen panel-inactive slide */
+      position: relative; /* establishes stacking context for absolute-positioned panels */
     }
+
+    /*
+     * Mobile layout: both panels are absolutely positioned and fill the full
+     * layout area at all times — they always have real, non-zero dimensions.
+     *
+     * The inactive panel is pushed off-screen with CSS transform. Unlike
+     * display:none or visibility:hidden, transform is a pure rendering
+     * operation: offsetWidth/offsetHeight are unchanged, the canvas context is
+     * never disturbed, and noVNC's ResizeObserver never fires. This mirrors
+     * how OpenClawService's WebSocket stays alive — the connection is
+     * completely decoupled from anything that could affect DOM dimensions.
+     */
+    .main-layout.is-mobile .panel {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+    }
+
+    .main-layout.is-mobile .panel.panel-inactive {
+      transform: translateX(100%);
+      pointer-events: none;
+    }
+
+    /* Desktop layout modes */
+    .main-layout.layout-split .chat-panel { flex: 55; }
+    .main-layout.layout-split .screen-panel { flex: 45; }
+
+    .main-layout.layout-chat-full .chat-panel { flex: 1; }
+    .main-layout.layout-chat-full .screen-panel { flex: 0 0 48px; }
+
+    .main-layout.layout-screen-full .chat-panel { flex: 0 0 48px; }
+    .main-layout.layout-screen-full .screen-panel { flex: 1; }
 
     /* Panels */
     .panel {
@@ -435,18 +405,6 @@ import { ScreenShareService } from '../../services/screen-share.service';
       min-width: 0;
       overflow: hidden;
     }
-
-    /* Split mode: 55% chat / 45% screen */
-    .layout-split .chat-panel { flex: 55; }
-    .layout-split .screen-panel { flex: 45; }
-
-    /* Chat full */
-    .layout-chat-full .chat-panel { flex: 1; }
-    .layout-chat-full .screen-panel { flex: 0 0 48px; }
-
-    /* Screen full */
-    .layout-screen-full .chat-panel { flex: 0 0 48px; }
-    .layout-screen-full .screen-panel { flex: 1; }
 
     /* Collapsed sidebar strip */
     .panel.collapsed {
@@ -921,6 +879,12 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   private onMediaChange = (e: MediaQueryListEvent) => {
+    // Switch to screen tab before marking mobile so the screen panel is never
+    // hidden (display:none) while a VNC session is active. A hidden ancestor
+    // collapses the canvas to 0×0, which causes noVNC to drop the connection.
+    if (e.matches && this.ss.status() === 'connected') {
+      this.activeTab.set('screen');
+    }
     this.isMobile.set(e.matches);
   };
 
