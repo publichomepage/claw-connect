@@ -181,6 +181,9 @@ import { ScreenShareService } from '../../services/screen-share.service';
                   </button>
                 </div>
               </div>
+              <div class="chat-footer">
+                Powered By <a href="https://www.publichome.page" target="_blank">www.publichome.page</a> All rights reserved. <a href="#">Terms & Policy</a>
+              </div>
           </div>
         </div>
 
@@ -767,6 +770,27 @@ import { ScreenShareService } from '../../services/screen-share.service';
     .input-area {
       padding: 0;
       flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .chat-footer {
+      text-align: center;
+      padding: 8px 10px 12px;
+      font-size: 11px;
+      color: #666;
+      border-top: 1px solid rgba(255, 255, 255, 0.03);
+    }
+
+    .chat-footer a {
+      color: #888;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .chat-footer a:hover {
+      color: #FF4500;
+      text-decoration: underline;
     }
 
     .input-wrapper {
