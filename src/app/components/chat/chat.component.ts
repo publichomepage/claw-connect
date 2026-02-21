@@ -186,14 +186,6 @@ import { ScreenShareService } from '../../services/screen-share.service';
                               <span class="prereq-bullet">1</span>
                               <span class="prereq-text">Run <strong><code>npm run setup</code></strong> to auto-configure CORS and auth.</span>
                             </div>
-                            <div class="prereq-item">
-                              <span class="prereq-bullet">2</span>
-                              <span class="prereq-text">Start Gateway: <code>openclaw start</code></span>
-                            </div>
-                            <div class="prereq-item">
-                              <span class="prereq-bullet">3</span>
-                              <span class="prereq-text">Run <code>tailscale funnel --https=8443 http://localhost:18789</code> and connect on <strong>port 8443</strong></span>
-                            </div>
                           </div>
                         }
                       </p>

@@ -110,6 +110,12 @@ if (!fs.existsSync(CONFIG_PATH)) {
             success('Gateway configuration is already up to date');
             info(`Allowed origins: ${DIM}${origins.join(', ')}${RESET}`);
         }
+
+        if (config.gateway?.auth?.token) {
+            const token = config.gateway.auth.token;
+            log('');
+            info(`Your auth token: ${GREEN}${BOLD}${token}${RESET} (copy this into ClawConnect)`);
+        }
     } catch (err) {
         error(`Failed to update config: ${err.message}`);
     }
@@ -126,7 +132,7 @@ if (hasOpenClaw) {
             success('OpenClaw Gateway is running (active)');
         } else {
             warn('OpenClaw Gateway is not running');
-            info('Run "openclaw start" to start it');
+            info(`Please ensure your OpenClaw Gateway is active before connecting.`);
         }
     } catch (e) {
         warn('Could not determine OpenClaw Gateway status');
@@ -140,7 +146,7 @@ log(`${DIM}${'─'.repeat(40)}${RESET}`);
 log(`1. [${hasOpenClaw ? 'X' : ' '}] Install OpenClaw CLI`);
 log(`2. [${hasTailscale ? 'X' : ' '}] Install Tailscale`);
 log(`3. [X] Configure CORS & Auth`);
-log(`4. [ ] Run: ${CYAN}openclaw start${RESET}`);
+log(`4. [ ] Ensure OpenClaw Gateway is running`);
 log(`5. [ ] Run: ${CYAN}tailscale funnel --https=8443 http://localhost:18789${RESET}`);
 log(`6. [ ] For Screen Share: ${CYAN}node ws-proxy.js 6080 localhost:5900${RESET}`);
 log(`7. [ ] For Screen Share: ${CYAN}tailscale funnel 6080${RESET}`);

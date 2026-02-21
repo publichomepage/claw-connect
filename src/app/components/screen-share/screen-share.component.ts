@@ -124,14 +124,6 @@ interface ScreenShareConfig {
               </div>
               <div class="prereq-item">
                 <span class="prereq-bullet">2</span>
-                <span class="prereq-text">Run <code>node ws-proxy.js 6080 localhost:5900</code></span>
-              </div>
-              <div class="prereq-item">
-                <span class="prereq-bullet">3</span>
-                <span class="prereq-text">Run <code>tailscale funnel 6080</code> and connect on <strong>port 443</strong></span>
-              </div>
-              <div class="prereq-item">
-                <span class="prereq-bullet">4</span>
                 <span class="prereq-text">Run <strong><code>npm run setup</code></strong> for Tailscale status & automated checks.</span>
               </div>
             </div>
