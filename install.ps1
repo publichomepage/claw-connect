@@ -52,17 +52,19 @@ if (-not (Test-Path "./onboard.js")) {
     Invoke-WebRequest -Uri "https://raw.githubusercontent.com/publichomepage/claw-connect/main/onboard.js" -OutFile "./onboard.js"
 }
 
-# Run the onboarding logic
+# Run the onboarding logic (CORS + Gateway Funnel)
 node onboard.js
+
+# Start Screen Share Proxy in background
+Write-Host -ForegroundColor Gray "Starting Screen Share Proxy in background..."
+Start-Process -FilePath "node" -ArgumentList "onboard.js", "--proxy" -WindowStyle Hidden
 
 Write-Host ""
 Write-Host -ForegroundColor Green "`n✨ Ready!"
 Write-Host -ForegroundColor Gray "----------------------------------------"
-Write-Host "To start your connection:"
-Write-Host "1. Ensure Gateway is running (check: openclaw gateway status)"
-Write-Host "2. Connect at https://claw.publichome.page"
-Write-Host ""
-Write-Host "For Screen Share (optional):"
-Write-Host "3. node onboard.js --proxy (starts proxy + exposes funnel)"
-Write-Host ""
+Write-Host "ClawConnect is now running in the background:"
+Write-Host "1. Gateway Status:  openclaw gateway status"
+Write-Host "2. Funnel Status:   tailscale funnel status"
+Write-Host "3. Connect at:      https://claw.publichome.page"
 Write-Host -ForegroundColor Gray "----------------------------------------"
+Write-Host ""

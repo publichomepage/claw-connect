@@ -68,9 +68,8 @@ function runProxy(wsPort = 6080, vncTarget = 'localhost:5900') {
     });
 
     log(`${DIM}${'─'.repeat(40)}${RESET}`);
-    log(`${BOLD}🚀 Screen Share Proxy Started${RESET}`);
+    log(`${BOLD}🚀 Screen Share Proxy Starting${RESET}`);
     info(`Listening on ${BOLD}ws://localhost:${wsPort}${RESET} → ${vncHost}:${vncPort}`);
-    info('Keep this terminal open while using Screen Share.');
     log(`${DIM}${'─'.repeat(40)}${RESET}`);
 
     wss.on('connection', (ws, req) => {
@@ -96,11 +95,11 @@ function setupFunnel(localPort, publicPort = null) {
     if (!checkCommand('tailscale')) return;
 
     try {
-        log(`${DIM}Configuring Tailscale Funnel for port ${localPort}...${RESET}`);
+        log(`${DIM}Configuring Tailscale Funnel for port ${localPort} (Background)...${RESET}`);
         // For screen share (6080) we want raw TCP funnel usually, but --http=6080 6080 works best for web components
         const cmd = publicPort === 6080
-            ? `tailscale funnel --http=6080 6080`
-            : `tailscale funnel --https=8443 http://localhost:18789`;
+            ? `tailscale funnel --bg --http=6080 6080`
+            : `tailscale funnel --bg --https=8443 http://localhost:18789`;
 
         // Run as async-style background so it doesn't block the script if it stays open, 
         // but here we just want to ensure it's "set".

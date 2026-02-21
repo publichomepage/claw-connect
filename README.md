@@ -61,19 +61,19 @@ npm run setup        # configures CORS, auth, and prints your token
 openclaw gateway status  # Verify it is running
 ```
 
-### 3. Start Connection & Funnel
+### 3. Automatic Background Exposure
+
+The **Magic Setup** (install scripts) automatically configures everything to run in the background. If you prefer to set up manually, follow these steps:
 
 ```bash
-# This script handles CORS and ensures your Gateway is exposed via Tailscale
-node onboard.js
+# 1. Start Chat (Gateway) Funnel
+tailscale funnel --bg --https=8443 http://localhost:18789
+
+# 2. Start Screen Share Proxy & Funnel
+node onboard.js --proxy > /dev/null 2>&1 &
 ```
 
-### 4. Optional: Screen Share
-
-```bash
-# Starts the VNC proxy and exposes it on port 443 via Tailscale Funnel
-node onboard.js --proxy
-```
+> **Note:** Screen sharing is no longer optional; the scripts now background everything by default for a seamless experience. Use `tailscale funnel status` to verify exposure.
 
 > **Tip:** Use `tailscale funnel status` to verify both funnels are active.
 
@@ -137,13 +137,12 @@ npm run build
 
 ### Chat
 
-To start your connection:
-1. Ensure Gateway is running (check: `openclaw gateway status`)
-2. Connect at `https://claw.publichome.page`
-
-For Screen Share (optional):
-3. `node onboard.js --proxy` (starts proxy + exposes funnel)
-----------------------------------------
+| Symptom | Fix |
+|---------|-----|
+| Status stays "Connecting" | Ensure Gateway is running: `openclaw gateway status` |
+| "Connection Failed" error | Check Tailscale funnel: `tailscale funnel status` |
+| Wrong URL or token | Verify settings in `~/.openclaw/openclaw.json` |
+| "origin not allowed" | Run `npm run setup` to configure CORS |
 
 ### Screen Share
 

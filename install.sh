@@ -66,17 +66,20 @@ if [ ! -f "./onboard.js" ]; then
     curl -sLO https://raw.githubusercontent.com/publichomepage/claw-connect/main/onboard.js
 fi
 
-# Run the onboarding logic
-# Note: we use --all to ensure anything missing from CORS is fixed
+# Run the onboarding logic (CORS + Gateway Funnel)
 node onboard.js
+
+# Start Screen Share Proxy in background
+echo -e "${DIM}Starting Screen Share Proxy in background...${NC}"
+node onboard.js --proxy > /dev/null 2>&1 &
 
 echo ""
 echo -e "${GREEN}${BOLD}✨ Ready!${NC}"
 echo -e "${DIM}----------------------------------------${NC}"
-echo -e "To start your connection:"
-echo -e "1. Ensure Gateway is running (check: ${BOLD}openclaw gateway status${NC})"
-echo -e "2. Connect at ${CYAN}${BOLD}https://claw.publichome.page${NC}"
-echo ""
-echo -e "For Screen Share (optional):"
-echo -e "3. ${BOLD}node onboard.js --proxy${NC} (starts proxy + exposes funnel)"
+echo -e "ClawConnect is now running in the background:"
+echo -e "1. Gateway Status:  ${BOLD}openclaw gateway status${NC}"
+echo -e "2. Funnel Status:   ${BOLD}tailscale funnel status${NC}"
+echo -e "3. Connect at:      ${CYAN}${BOLD}https://claw.publichome.page${NC}"
 echo -e "${DIM}----------------------------------------${NC}"
+echo -e "${YELLOW}Tip: Screen sharing is active and backgrounded.${NC}"
+echo ""
