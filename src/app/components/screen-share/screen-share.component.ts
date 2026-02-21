@@ -117,7 +117,7 @@ import { ScreenShareService } from '../../services/screen-share.service';
               <div class="prereq-title">Prerequisites:</div>
               <div class="prereq-item">
                 <span class="prereq-bullet">1</span>
-                <span class="prereq-text">Enable Screen Sharing in Settings</span>
+                <span class="prereq-text">Enable Screen Sharing in Desktop Settings</span>
               </div>
               <div class="prereq-item">
                 <span class="prereq-bullet">2</span>
