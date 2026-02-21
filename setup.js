@@ -17,7 +17,6 @@ const BACKUP_PATH = CONFIG_PATH + '.bak';
 const CLAWCONNECT_ORIGIN = 'https://claw.publichome.page';
 const LOCALHOST_ORIGIN = 'http://localhost:4200';
 const DRY_RUN = process.argv.includes('--dry-run');
-const START_PROXY = process.argv.includes('--proxy') || process.argv.includes('--all');
 
 // Colors for terminal output
 const GREEN = '\x1b[32m';
@@ -34,53 +33,6 @@ function warn(msg) { log(`${YELLOW}⚠${RESET} ${msg}`); }
 function error(msg) { log(`${RED}✘${RESET} ${msg}`); }
 function info(msg) { log(`${CYAN}ℹ${RESET} ${msg}`); }
 
-/**
- * Embedded WebSocket Proxy Logic
- * (Allows setup.js to run as a standalone service via npx)
- */
-function runProxy(wsPort = 6080, vncTarget = 'localhost:5900') {
-    const net = require('net');
-    let WebSocketServer;
-    try {
-        ({ WebSocketServer } = require('ws'));
-    } catch (e) {
-        error('The "ws" package is required for the proxy.');
-        info('Please run: npm install -g ws');
-        process.exit(1);
-    }
-
-    const [vncHost, vncPortStr] = vncTarget.split(':');
-    const vncPort = parseInt(vncPortStr || '5900');
-
-    const wss = new WebSocketServer({
-        port: wsPort,
-        handleProtocols: (protocols) => {
-            if (protocols.has('binary')) return 'binary';
-            return false;
-        }
-    });
-
-    log(`${DIM}${'─'.repeat(40)}${RESET}`);
-    log(`${BOLD}🚀 Screen Share Proxy Started${RESET}`);
-    info(`Listening on ${BOLD}ws://localhost:${wsPort}${RESET} → ${vncHost}:${vncPort}`);
-    info('Keep this terminal open while using Screen Share.');
-    log(`${DIM}${'─'.repeat(40)}${RESET}`);
-
-    wss.on('connection', (ws, req) => {
-        const vnc = net.connect(vncPort, vncHost);
-        let vncConnected = false;
-
-        vnc.on('connect', () => { vncConnected = true; });
-        vnc.on('data', (data) => { if (ws.readyState === 1) ws.send(data); });
-        vnc.on('end', () => ws.close());
-        vnc.on('error', () => ws.close());
-
-        ws.on('message', (data) => { if (vncConnected && !vnc.destroyed) vnc.write(data); });
-        ws.on('close', () => vnc.end());
-        ws.on('error', () => vnc.end());
-    });
-}
-
 function checkCommand(cmd) {
     try {
         execSync(`which ${cmd}`, { stdio: 'ignore' });
@@ -93,11 +45,11 @@ function checkCommand(cmd) {
 log('');
 log(`${BOLD}🦞 ClawConnect Setup${RESET}`);
 log(`${DIM}${'─'.repeat(40)}${RESET}`);
-
 if (DRY_RUN) {
     log(`${YELLOW}${BOLD}DRY RUN MODE ENABLED${RESET}`);
     log(`${DIM}No changes will be written, and sensitive data will be masked.${RESET}`);
 }
+log('');
 
 // --- 1. System Requirements ---
 log(`${BOLD}Phase 1: Checking System Requirements${RESET}`);
@@ -109,26 +61,34 @@ if (hasOpenClaw) {
     success('OpenClaw CLI found');
 } else {
     warn('OpenClaw CLI not found in PATH');
+    info('To install: npm install -g @openclaw/gateway');
 }
 
 if (hasTailscale) {
     success('Tailscale found');
 } else {
-    error('Tailscale not found (required for remote access)');
+    error('Tailscale not found');
+    info('Tailscale is required for secure remote access.');
+    info('Download it here: https://tailscale.com/download');
+    log('');
 }
 
 // --- 2. Gateway Configuration (CORS) ---
-log('');
 log(`${BOLD}Phase 2: Configuring Gateway CORS${RESET}`);
 
 if (!fs.existsSync(CONFIG_PATH)) {
     warn(`OpenClaw config not found at ${CONFIG_PATH}`);
+    info('Please run "openclaw onboard" or start OpenClaw first.');
 } else {
+    let rawConfig;
+    let config;
     try {
-        const rawConfig = fs.readFileSync(CONFIG_PATH, 'utf-8');
-        const config = JSON.parse(rawConfig);
+        rawConfig = fs.readFileSync(CONFIG_PATH, 'utf-8');
+        config = JSON.parse(rawConfig);
 
-        if (!DRY_RUN) fs.writeFileSync(BACKUP_PATH, rawConfig, 'utf-8');
+        // Backup
+        fs.writeFileSync(BACKUP_PATH, rawConfig, 'utf-8');
+        success(`Backed up config to ${DIM}${BACKUP_PATH}${RESET}`);
 
         let changed = false;
         if (!config.gateway) config.gateway = {};
@@ -138,31 +98,36 @@ if (!fs.existsSync(CONFIG_PATH)) {
         const origins = config.gateway.controlUi.allowedOrigins;
         if (!origins.includes(CLAWCONNECT_ORIGIN)) {
             origins.push(CLAWCONNECT_ORIGIN);
+            success(`Added ${CYAN}${CLAWCONNECT_ORIGIN}${RESET} to allowedOrigins`);
             changed = true;
         }
+
         if (config.gateway.controlUi.allowInsecureAuth !== true) {
             config.gateway.controlUi.allowInsecureAuth = true;
+            success('Enabled allowInsecureAuth');
             changed = true;
         }
 
         if (changed) {
             if (DRY_RUN) {
-                success(`[DRY RUN] Would update config to allow ${CLAWCONNECT_ORIGIN}`);
+                info(`[DRY RUN] Would update ${CONFIG_PATH}`);
             } else {
                 fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2) + '\n', 'utf-8');
-                success(`Updated Gateway CORS to allow ${BOLD}${CLAWCONNECT_ORIGIN}${RESET}`);
+                success(`Updated ${DIM}${CONFIG_PATH}${RESET}`);
             }
         } else {
             success('Gateway configuration is already up to date');
+            info(`Allowed origins: ${DIM}${origins.join(', ')}${RESET}`);
         }
 
         if (config.gateway?.auth?.token) {
             const token = config.gateway.auth.token;
+            log('');
             if (DRY_RUN) {
                 const masked = '•'.repeat(24) + token.slice(-4);
-                info(`Your auth token: ${GREEN}${BOLD}${masked}${RESET}`);
+                info(`Your auth token: ${GREEN}${BOLD}${masked}${RESET} (masked for dry-run)`);
             } else {
-                info(`Your auth token: ${GREEN}${BOLD}${token}${RESET} (copy this)`);
+                info(`Your auth token: ${GREEN}${BOLD}${token}${RESET} (copy this into ClawConnect)`);
             }
         }
     } catch (err) {
@@ -170,20 +135,38 @@ if (!fs.existsSync(CONFIG_PATH)) {
     }
 }
 
-// --- 3. Summary or Proxy Start ---
-if (START_PROXY) {
-    runProxy();
-} else {
-    log('');
-    log(`${BOLD}${GREEN}Setup Checklist Summary${RESET}`);
-    log(`${DIM}${'─'.repeat(40)}${RESET}`);
-    log(`1. [${hasOpenClaw ? 'X' : ' '}] OpenClaw CLI`);
-    log(`2. [${hasTailscale ? 'X' : ' '}] Tailscale`);
-    log(`3. [X] Configure CORS & Auth`);
-    log(`4. [ ] Run Screen Proxy: ${CYAN}npx claw-connect-setup --proxy${RESET}`);
-    log(`5. [ ] Run Funnel: ${CYAN}tailscale funnel --https=8443 http://localhost:18789${RESET}`);
-    log('');
-    info(`Tip: Use ${BOLD}--proxy${RESET} to start the screen share proxy immediately.`);
-    log('');
+// --- 3. Running Prerequisites ---
+log('');
+log(`${BOLD}Phase 3: Service Status${RESET}`);
+
+if (hasOpenClaw) {
+    try {
+        const status = execSync('openclaw gateway status', { encoding: 'utf-8' });
+        if (status.includes('Runtime: running')) {
+            success('OpenClaw Gateway is running (active)');
+        } else {
+            warn('OpenClaw Gateway is not running');
+            info(`Please ensure your OpenClaw Gateway is active before connecting.`);
+        }
+    } catch (e) {
+        warn('Could not determine OpenClaw Gateway status');
+    }
 }
 
+// --- Summary ---
+log('');
+log(`${BOLD}${GREEN}Setup Checklist Summary${RESET}`);
+log(`${DIM}${'─'.repeat(40)}${RESET}`);
+log(`1. [${hasOpenClaw ? 'X' : ' '}] Install OpenClaw CLI`);
+log(`2. [${hasTailscale ? 'X' : ' '}] Install Tailscale`);
+log(`3. [X] Configure CORS & Auth`);
+log(`4. [ ] Ensure OpenClaw Gateway is running`);
+log(`5. [ ] Run: ${CYAN}tailscale funnel --https=8443 http://localhost:18789${RESET}`);
+log(`6. [ ] For Screen Share: Run ${CYAN}node ws-proxy.js 6080 localhost:5900${RESET}`);
+log(`7. [ ] For Screen Share: Run ${CYAN}tailscale funnel 6080${RESET} (this exposes it on ${BOLD}port 443${RESET})`);
+log('');
+info(`Tip: After starting a funnel, Tailscale will show your public domain`);
+info(`(e.g., ${BOLD}your-mac.tailnet-abc.ts.net${RESET}). Use this in ClawConnect!`);
+log('');
+log(`${BOLD}Ready!${RESET} Open ${CYAN}https://claw.publichome.page${RESET} to connect.`);
+log('');
