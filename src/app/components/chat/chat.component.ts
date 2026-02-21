@@ -56,8 +56,20 @@ import { ScreenShareService } from '../../services/screen-share.service';
               <app-settings
                 (connectRequest)="onConnect($event)"
                 (disconnectRequest)="onDisconnect()"
+                (hostChange)="onGatewayHostChange($event)"
               />
             </div>
+
+            @if (openClaw.connectionStatus() === 'error') {
+              <div class="connection-error-banner">
+                <span class="error-icon">⚠️</span>
+                <div class="error-text">
+                  <strong>Connection Failed</strong>
+                  <span>Could not connect to the OpenClaw Gateway. Please check your settings and ensure the Gateway is running.</span>
+                </div>
+              </div>
+            }
+
             <div class="messages-area" #messagesContainer>
               @if (openClaw.messages().length === 0) {
                 <div class="empty-state">
@@ -143,8 +155,20 @@ import { ScreenShareService } from '../../services/screen-share.service';
                   <app-settings
                     (connectRequest)="onConnect($event)"
                     (disconnectRequest)="onDisconnect()"
+                    (hostChange)="onGatewayHostChange($event)"
                   />
                 </div>
+
+                @if (openClaw.connectionStatus() === 'error') {
+                  <div class="connection-error-banner">
+                    <span class="error-icon">⚠️</span>
+                    <div class="error-text">
+                      <strong>Connection Failed</strong>
+                      <span>Could not connect to the OpenClaw Gateway. Please check your settings and ensure the Gateway is running.</span>
+                    </div>
+                  </div>
+                }
+
                 <div class="messages-area" #messagesContainer>
                   @if (openClaw.messages().length === 0) {
                     <div class="empty-state">
@@ -156,6 +180,13 @@ import { ScreenShareService } from '../../services/screen-share.service';
                         } @else {
                           Connect to your OpenClaw Gateway to start chatting.
                           <br />Configure your Gateway URL in Settings above.
+                           <div class="prereqs">
+                            <div class="prereq-title">Prerequisites:</div>
+                            <div class="prereq-item">
+                              <span class="prereq-bullet">1</span>
+                              <span class="prereq-text">Run <strong><code>npm run setup</code></strong> to auto-configure CORS and auth.</span>
+                            </div>
+                          </div>
                         }
                       </p>
                     </div>
@@ -550,6 +581,46 @@ import { ScreenShareService } from '../../services/screen-share.service';
       flex-shrink: 0;
     }
 
+    /* Connection Error Banner */
+    .connection-error-banner {
+      margin: 12px 20px 0;
+      padding: 12px 16px;
+      background: rgba(244, 67, 54, 0.1);
+      border: 1px solid rgba(244, 67, 54, 0.2);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      animation: bannerSlideDown 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+      flex-shrink: 0;
+    }
+
+    @keyframes bannerSlideDown {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .error-icon {
+      font-size: 20px;
+    }
+
+    .error-text {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .error-text strong {
+      color: #f44336;
+      font-size: 13px;
+      margin-bottom: 2px;
+    }
+
+    .error-text span {
+      color: #e0e0e0;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
     /* Messages Area */
     .messages-area {
       flex: 1;
@@ -595,8 +666,79 @@ import { ScreenShareService } from '../../services/screen-share.service';
     .empty-title {
       font-size: 24px;
       font-weight: 700;
-      color: #e0e0e0;
-      margin: 0 0 10px;
+      color: #fff;
+      margin-bottom: 12px;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    }
+
+    .empty-description {
+      font-size: 15px;
+      color: #bbb;
+      line-height: 1.6;
+      max-width: 400px;
+    }
+
+    /* Prerequisites Box */
+    .prereqs {
+      text-align: left;
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      padding: 20px;
+      margin-top: 24px;
+      width: 100%;
+    }
+
+    .prereq-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #888;
+      margin-bottom: 12px;
+    }
+
+    .prereq-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 13px;
+      color: #aaa;
+      margin-bottom: 8px;
+    }
+
+    .prereq-text {
+      flex: 1;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 4px;
+      line-height: 1.5;
+    }
+
+    .prereq-item:last-child { margin-bottom: 0; }
+
+    .prereq-bullet {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #FF4500, #E63E00);
+      color: white;
+      font-size: 11px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .prereq-item code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      background: rgba(255, 69, 0, 0.1);
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #FF6B35;
     }
 
     .empty-description {
@@ -787,6 +929,10 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
       this.scrollToBottom();
       this.shouldScroll = false;
     }
+  }
+
+  onGatewayHostChange(newHost: string): void {
+    this.ss.sharedHost.set(newHost);
   }
 
   onConnect(config: ConnectionConfig): void {

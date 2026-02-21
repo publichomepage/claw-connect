@@ -17,18 +17,29 @@ import { ConnectionConfig } from '../../services/openclaw.service';
 
       @if (isOpen()) {
         <div class="settings-body">
-          <div class="field">
-            <label for="gateway-url">Gateway URL</label>
-            <input
-              type="text"
-              id="gateway-url"
-              [(ngModel)]="gatewayUrl"
-              placeholder="ws://localhost:18789"
-              (change)="saveToStorage()"
-            />
-          </div>
+            <div class="field-row">
+              <div class="field host-field">
+                <label for="gateway-host">Gateway Host</label>
+                <input
+                  type="text"
+                  id="gateway-host"
+                  [(ngModel)]="gatewayHost"
+                (ngModelChange)="onHostChange($event)"
+                placeholder="localhost or tailscale-domain"
+                />
+              </div>
+              <div class="field port-field">
+                <label for="gateway-port">Gateway Port</label>
+                <input
+                  type="number"
+                  id="gateway-port"
+                  [(ngModel)]="gatewayPort"
+                  (change)="saveToStorage()"
+                />
+              </div>
+            </div>
 
-          <div class="field">
+            <div class="field">
             <label for="auth-token">Auth Token</label>
             <input
               type="password"
@@ -164,6 +175,49 @@ import { ConnectionConfig } from '../../services/openclaw.service';
       color: #555;
     }
 
+    /* Hide number input spinners */
+    .field input[type="number"]::-webkit-inner-spin-button,
+    .field input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    .field input[type="number"] {
+      -moz-appearance: textfield;
+    }
+
+    .field-row {
+      display: flex;
+      gap: 12px;
+    }
+
+    .host-field {
+      flex: 3;
+    }
+
+    .port-field {
+      flex: 1;
+    }
+
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px !important;
+      font-weight: 500 !important;
+      color: #e0e0e0 !important;
+      text-transform: none !important;
+      letter-spacing: normal !important;
+      cursor: pointer;
+    }
+
+    .checkbox-label input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      margin: 0;
+      accent-color: #FF4500;
+      cursor: pointer;
+    }
+
     .settings-actions {
       display: flex;
       gap: 10px;
@@ -207,9 +261,11 @@ import { ConnectionConfig } from '../../services/openclaw.service';
 export class SettingsComponent {
   @Output() connectRequest = new EventEmitter<ConnectionConfig>();
   @Output() disconnectRequest = new EventEmitter<void>();
+  @Output() hostChange = new EventEmitter<string>();
 
   isOpen = signal(false);
-  gatewayUrl = 'ws://localhost:18789';
+  gatewayHost = 'localhost';
+  gatewayPort = 18789;
   authToken = '';
   authPassword = '';
 
@@ -221,10 +277,25 @@ export class SettingsComponent {
     this.isOpen.update(v => !v);
   }
 
+  onHostChange(newHost: string): void {
+    this.hostChange.emit(newHost);
+  }
+
   onConnect(): void {
     this.saveToStorage();
+
+    let cleanHost = this.gatewayHost.trim();
+    if (cleanHost.startsWith('wss://')) cleanHost = cleanHost.substring(6);
+    else if (cleanHost.startsWith('ws://')) cleanHost = cleanHost.substring(5);
+    else if (cleanHost.startsWith('https://')) cleanHost = cleanHost.substring(8);
+    else if (cleanHost.startsWith('http://')) cleanHost = cleanHost.substring(7);
+    if (cleanHost.endsWith('/')) cleanHost = cleanHost.slice(0, -1);
+
+    const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
+    const finalUrl = `${protocol}://${cleanHost}:${this.gatewayPort}`;
+
     this.connectRequest.emit({
-      url: this.gatewayUrl,
+      url: finalUrl,
       authToken: this.authToken || undefined,
       authPassword: this.authPassword || undefined,
     });
@@ -236,7 +307,8 @@ export class SettingsComponent {
 
   saveToStorage(): void {
     localStorage.setItem('clawconnect_config', JSON.stringify({
-      url: this.gatewayUrl,
+      host: this.gatewayHost,
+      port: this.gatewayPort,
       authToken: this.authToken,
       authPassword: this.authPassword,
     }));
@@ -247,12 +319,27 @@ export class SettingsComponent {
       const stored = localStorage.getItem('clawconnect_config');
       if (stored) {
         const config = JSON.parse(stored);
-        this.gatewayUrl = config.url || 'ws://localhost:18789';
+        this.gatewayHost = config.host || 'localhost';
+        this.gatewayPort = config.port || 18789;
+
+        // Auto-migrate old WSS settings to new port routing if applicable
+        if (location.protocol === 'https:' && this.gatewayPort === 18789) {
+          this.gatewayPort = 8443;
+        }
+
         this.authToken = config.authToken || '';
         this.authPassword = config.authPassword || '';
+      } else {
+        // Apply secure default out of the box
+        if (location.protocol === 'https:') {
+          this.gatewayPort = 8443;
+        }
       }
     } catch {
       // Use defaults
+      if (location.protocol === 'https:') {
+        this.gatewayPort = 8443;
+      }
     }
   }
 }
