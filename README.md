@@ -167,6 +167,9 @@ src/app/
 public/novnc/          # noVNC ESM source (v1.5.0)
 ws-proxy.js            # WebSocket-to-TCP bridge for VNC
 setup.js               # Auto-configuration script
+onboard.js             # Onboarding launcher (npx)
+install.sh / ps1       # Platform-specific Magic Setup scripts
+LICENSE                # MIT License
 ```
 
 ## Tech Stack
