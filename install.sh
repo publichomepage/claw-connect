@@ -42,7 +42,7 @@ fi
 # 3. OpenClaw
 if ! has_cmd openclaw; then
     echo -e "${YELLOW}Installing OpenClaw Gateway...${NC}"
-    npm install -g @openclaw/gateway
+    npm i -g openclaw
 else
     echo -e "${GREEN}✔ OpenClaw found${NC}"
 fi
