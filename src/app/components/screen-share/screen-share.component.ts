@@ -121,7 +121,7 @@ import { ScreenShareService } from '../../services/screen-share.service';
               </div>
               <div class="prereq-item">
                 <span class="prereq-bullet">2</span>
-                <span class="prereq-text">Run the <strong>Magic Setup</strong> script from our GitHub repo for automated status checks and configuration.</span>
+                <span class="prereq-text">Run the <a href="https://github.com/OpenClaw/claw-connect" target="_blank" class="magic-link"><strong>Magic Setup</strong></a> for automated status checks and configuration.</span>
               </div>
             </div>
           </div>
@@ -483,6 +483,18 @@ import { ScreenShareService } from '../../services/screen-share.service';
       padding: 2px 6px;
       border-radius: 4px;
       color: #FF6B35;
+    }
+
+    .magic-link {
+      color: #FF6B35;
+      text-decoration: underline;
+      text-underline-offset: 4px;
+      transition: all 0.2s;
+    }
+
+    .magic-link:hover {
+      color: #FF4500;
+      opacity: 0.8;
     }
 
     /* Connection Error Banner */
