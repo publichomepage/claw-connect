@@ -292,7 +292,7 @@ export class OpenClawService {
           content: `Error: ${errorText}`,
           timestamp: new Date(),
         }];
-        return newMsgs.slice(-50);
+        return newMsgs.slice(-20);
       });
       return;
     }
@@ -336,7 +336,7 @@ export class OpenClawService {
             timestamp: new Date(),
             isStreaming: isDelta,
           }];
-          return newMsgs.slice(-50);
+          return newMsgs.slice(-20);
         });
       }
 
@@ -358,7 +358,7 @@ export class OpenClawService {
       };
       this.messages.update(msgs => {
         const newMsgs = [...msgs, msg];
-        return newMsgs.slice(-50);
+        return newMsgs.slice(-20);
       });
       this.incomingMessage$.next(msg);
     }
@@ -385,7 +385,7 @@ export class OpenClawService {
           timestamp: new Date(),
           isStreaming: !done,
         }];
-        return newMsgs.slice(-50);
+        return newMsgs.slice(-20);
       }
       return msgs;
     });
@@ -481,7 +481,7 @@ export class OpenClawService {
     };
     this.messages.update(msgs => {
       const newMsgs = [...msgs, userMsg];
-      return newMsgs.slice(-50);
+      return newMsgs.slice(-20);
     });
     this.isTyping.set(true);
 
@@ -503,7 +503,7 @@ export class OpenClawService {
         this.isTyping.set(false);
         this.messages.update(msgs => {
           const newMsgs = [...msgs, msg];
-          return newMsgs.slice(-50);
+          return newMsgs.slice(-20);
         });
         this.incomingMessage$.next(msg);
       }
@@ -518,7 +518,7 @@ export class OpenClawService {
       };
       this.messages.update(msgs => {
         const newMsgs = [...msgs, errorMsg];
-        return newMsgs.slice(-50);
+        return newMsgs.slice(-20);
       });
     }
   }
@@ -527,7 +527,7 @@ export class OpenClawService {
     try {
       const result = await this.sendRequest('chat.history', {
         sessionKey: this.sessionKey,
-        limit: 50,
+        limit: 20,
       });
       if (!result) return;
 
@@ -550,9 +550,9 @@ export class OpenClawService {
           })
           .filter((m: ChatMessage) => m.content.length > 0);
 
-        // Local truncation fallback: take last 50
-        if (historyMessages.length > 50) {
-          historyMessages = historyMessages.slice(-50);
+        // Local truncation fallback: take last 20
+        if (historyMessages.length > 20) {
+          historyMessages = historyMessages.slice(-20);
         }
 
         if (historyMessages.length > 0) {
