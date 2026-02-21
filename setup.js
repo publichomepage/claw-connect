@@ -107,7 +107,8 @@ if (!fs.existsSync(CONFIG_PATH)) {
             fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2) + '\n', 'utf-8');
             success(`Updated ${DIM}${CONFIG_PATH}${RESET}`);
         } else {
-            info('Gateway configuration is already correct');
+            success('Gateway configuration is already up to date');
+            info(`Allowed origins: ${DIM}${origins.join(', ')}${RESET}`);
         }
     } catch (err) {
         error(`Failed to update config: ${err.message}`);
@@ -120,15 +121,15 @@ log(`${BOLD}Phase 3: Service Status${RESET}`);
 
 if (hasOpenClaw) {
     try {
-        const status = execSync('openclaw status', { encoding: 'utf-8' });
-        if (status.includes('RUNNING')) {
-            success('OpenClaw Gateway is running');
+        const status = execSync('openclaw gateway status', { encoding: 'utf-8' });
+        if (status.includes('Runtime: running')) {
+            success('OpenClaw Gateway is running (active)');
         } else {
             warn('OpenClaw Gateway is not running');
             info('Run "openclaw start" to start it');
         }
     } catch (e) {
-        warn('Could not determine OpenClaw status');
+        warn('Could not determine OpenClaw Gateway status');
     }
 }
 
