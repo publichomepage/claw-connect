@@ -171,14 +171,17 @@ npm install
 
 ### 2. Configure the Gateway
 
-ClawConnect connects as an `openclaw-control-ui` client, which requires the Gateway's `allowInsecureAuth` option. Add this to your `~/.openclaw/openclaw.json` under the `gateway` key:
+ClawConnect is deployed securely on Cloudflare Pages. To allow the cloud-hosted app to securely connect to your local OpenClaw gateway, you must enable CORS in `~/.openclaw/openclaw.json` under the `gateway.controlUi.allowedOrigins` key, and allow token-based API authentication:
 
 ```json
 {
   "gateway": {
     "controlUi": {
       "allowInsecureAuth": true,
-      "allowedOrigins": ["http://localhost:4200"]
+      "allowedOrigins": [
+        "http://localhost:4200",
+        "https://claw-connect.pages.dev"
+      ]
     }
   }
 }
@@ -234,21 +237,29 @@ Output goes to `dist/clawcoder/`.
 
 ## Testing the Connection
 
-### Step 1: Verify the Gateway is Running
+### Step 1: Start OpenClaw Gateway
 
+Start the OpenClaw API gateway via the CLI:
 ```bash
-curl -s http://127.0.0.1:18789/ | head -1
-# Should return HTML (the Gateway's control UI)
+openclaw start
 ```
 
-### Step 2: Connect via ClawConnect
+### Step 2: Run Tailscale Funnel
 
-1. Open [http://localhost:4200](http://localhost:4200)
+Since ClawConnect is hosted in the browser (HTTPS), you must securely expose the API using Tailscale Funnel so the web app can reach your local machine.
+```bash
+tailscale funnel --https=8443 http://localhost:18789
+```
+
+### Step 3: Connect via ClawConnect
+
+1. Open [ClawConnect](https://claw-connect.pages.dev)
 2. Click **Connection Settings** to expand the panel
-3. Set **Gateway URL** to `ws://localhost:18789`
-4. Paste your auth token into the **Auth Token** field
-5. Click **Connect**
-6. The header should show a green dot with **"Connected"**
+3. Set **Gateway Host** to your Tailscale hostname (e.g., `mac-mini.tailscale.net`)
+4. Set **Gateway Port** to `8443`
+5. Paste your auth token into the **Auth Token** field
+6. Click **Connect**
+7. The header should show a green dot with **"Connected"**
 
 ### Step 3: Send a Test Message
 
@@ -337,29 +348,22 @@ On the **Mac whose screen you want to share**, run:
 node ws-proxy.js 6080 localhost:5900
 ```
 
-You should see:
-```
-[ws-proxy] Listening on :6080 → localhost:5900
-```
+#### 2. Start Tailscale Funnel
 
-> **Tip:** To run in the background: `node ws-proxy.js 6080 localhost:5900 &`
-
-#### 2. Start ClawConnect
+Expose the WebSocket proxy securely over HTTPS using Tailscale Funnel:
 
 ```bash
-npm start
+tailscale funnel 6080
 ```
 
 #### 3. Connect from the Browser
 
-1. Open [http://localhost:4200](http://localhost:4200)
+1. Open [ClawConnect](https://claw-connect.pages.dev)
 2. Click the **🖥️ Screen Share** tab
 3. Fill in the connection details:
 
-| Field | Value | Notes |
-|-------|-------|-------|
-| **Tailscale IP** | `100.x.y.z` | Your Mac's Tailscale IP (use `localhost` if connecting to yourself) |
-| **WebSocket Port** | `6080` | Default port for ws-proxy.js |
+| **Tailscale Domain**| `your-mac.tailnet.ts.net` | Your Mac's Tailscale domain name |
+| **WebSocket Port** | `443` | The public secure port (proxies to 6080 behind Tailscale) |
 | **Mac Username** | `yourusername` | Your macOS login username |
 | **Mac Password** | `yourpassword` | Your macOS login password |
 
