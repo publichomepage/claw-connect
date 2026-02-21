@@ -115,9 +115,7 @@ import { ScreenShareService } from '../../services/screen-share.service';
             <div class="messages-area" #messagesContainer>
               @if (openClaw.messages().length === 0) {
                 <div class="empty-state">
-                  <div class="empty-icon">
-                    <img src="logo.png" class="welcome-logo" alt="ClawConnect Logo">
-                  </div>
+                  <div class="empty-icon">🦞</div>
                   <h2 class="empty-title">Welcome to ClawConnect</h2>
                   <p class="empty-description">
                     @if (openClaw.isConnected()) {
@@ -662,19 +660,9 @@ import { ScreenShareService } from '../../services/screen-share.service';
       padding: 40px 20px;
     }
 
-    .welcome-logo {
-      width: 80px;
-      height: 80px;
-      opacity: 0.9;
-      filter: drop-shadow(0 0 15px rgba(239, 68, 68, 0.2));
-    }
-
     .empty-icon {
-      font-size: 4rem;
-      margin-bottom: 2rem;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      font-size: 64px;
+      margin-bottom: 20px;
       animation: lobsterFloat 3s ease-in-out infinite;
     }
 
