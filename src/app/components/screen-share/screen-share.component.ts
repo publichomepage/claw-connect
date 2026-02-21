@@ -126,7 +126,7 @@ import { ScreenShareService } from '../../services/screen-share.service';
               </div>
               <div class="prereq-item">
                 <span class="prereq-bullet">2</span>
-                <span class="prereq-text">Run the <strong>Magic Setup</strong> (<a href="https://github.com/publichomepage/claw-connect/blob/main/install.sh" target="_blank" class="magic-link">macOS</a> / <a href="https://github.com/publichomepage/claw-connect/blob/main/install.ps1" target="_blank" class="magic-link">Windows</a>) to create a Tailscale funnel.</span>
+                <span class="prereq-text">Run the <strong>Magic Setup</strong> (<a href="#" class="magic-link" [class.copied]="copiedCommand() === 'macos'" (click)="copyCommand($event, 'macos')" title="Click to copy macOS install command">{{ copiedCommand() === 'macos' ? 'Copied!' : 'macOS' }}</a> / <a href="#" class="magic-link" [class.copied]="copiedCommand() === 'windows'" (click)="copyCommand($event, 'windows')" title="Click to copy Windows install command">{{ copiedCommand() === 'windows' ? 'Copied!' : 'Windows' }}</a>) to create a Tailscale funnel.</span>
               </div>
             </div>
           </div>
@@ -495,11 +495,17 @@ import { ScreenShareService } from '../../services/screen-share.service';
       text-decoration: underline;
       text-underline-offset: 4px;
       transition: all 0.2s;
+      cursor: pointer;
     }
 
     .magic-link:hover {
       color: #FF4500;
       opacity: 0.8;
+    }
+
+    .magic-link.copied {
+      color: #4CAF50;
+      text-decoration: none;
     }
 
     /* Connection Error Banner */
@@ -659,6 +665,7 @@ export class ScreenShareComponent implements AfterViewInit {
   readonly configOpen = signal(false);
   readonly showAll = signal(false);
   readonly isRotated = signal(false);
+  readonly copiedCommand = signal<string | null>(null);
 
   // True when fullscreen auto-rotated on mobile (so we undo it on exit).
   private autoRotatedForFullscreen = false;
@@ -858,6 +865,18 @@ export class ScreenShareComponent implements AfterViewInit {
       // styles remain relative to a stable parent element throughout.
       (container.parentElement ?? container).requestFullscreen();
     }
+  }
+
+  copyCommand(event: Event, platform: 'macos' | 'windows'): void {
+    event.preventDefault();
+    const commands: Record<string, string> = {
+      macos: 'curl -fsSL https://raw.githubusercontent.com/publichomepage/claw-connect/main/install.sh | bash',
+      windows: 'irm https://raw.githubusercontent.com/publichomepage/claw-connect/main/install.ps1 | iex',
+    };
+    navigator.clipboard.writeText(commands[platform]).then(() => {
+      this.copiedCommand.set(platform);
+      setTimeout(() => this.copiedCommand.set(null), 2000);
+    });
   }
 
   saveConfig(): void {
