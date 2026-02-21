@@ -229,7 +229,7 @@ import { ScreenShareService } from '../../services/screen-share.service';
         </div>
       </div>
 
-      <div class="chat-footer">
+      <div class="chat-footer hide-on-landscape">
         Powered By <a href="https://www.publichome.page" target="_blank">www.publichome.page</a> All rights reserved. <a href="#">Terms & Policy</a>
       </div>
     </div>
@@ -246,6 +246,22 @@ import { ScreenShareService } from '../../services/screen-share.service';
       padding: 20px;
       max-width: 100%;
       box-sizing: border-box;
+      transition: padding 0.3s;
+    }
+
+    /* Aggressive mobile landscape optimizations */
+    @media (max-width: 932px) and (orientation: landscape) {
+      .app-shell {
+        padding: 0 !important;
+      }
+      .hide-on-landscape {
+        display: none !important;
+      }
+      .app-shell .chat-header, 
+      .app-shell .tab-bar, 
+      .app-shell .chat-footer {
+        display: none !important;
+      }
     }
 
     /* ==============================
@@ -1074,8 +1090,32 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     if (e.matches && this.ss.status() === 'connected') {
       this.activeTab.set('screen');
     }
+    // When transitioning to desktop/landscape mode with screen share active,
+    // maximize the screen share panel automatically.
+    if (!e.matches && this.ss.status() === 'connected') {
+      this.desktopLayout.set('screen-full');
+    }
     this.isMobile.set(e.matches);
   };
+
+  @HostListener('window:orientationchange')
+  onOrientationChange(): void {
+    // Give the browser time to settle dimensions after rotation
+    setTimeout(() => {
+      if (this.ss.status() !== 'connected') return;
+      const isLandscape = window.matchMedia('(orientation: landscape)').matches;
+      if (isLandscape) {
+        if (this.isMobile()) {
+          // Still in mobile mode (narrow landscape) — ensure screen tab is active
+          // so the screen share panel is visible even though the tab bar is hidden
+          this.activeTab.set('screen');
+        } else {
+          // Desktop mode — maximize screen share panel
+          this.desktopLayout.set('screen-full');
+        }
+      }
+    }, 150);
+  }
 
   ngAfterViewChecked(): void {
     if (this.shouldScroll) {

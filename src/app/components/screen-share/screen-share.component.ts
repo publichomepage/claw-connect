@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild, OnInit, AfterViewInit, computed, effect, signal } from '@angular/core';
+import { Component, ElementRef, ViewChild, OnInit, AfterViewInit, computed, effect, signal, HostListener } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { ScreenShareService } from '../../services/screen-share.service';
@@ -143,6 +143,13 @@ import { ScreenShareService } from '../../services/screen-share.service';
             </svg>
             <span class="btn-text">Fullscreen</span>
           </button>
+          <button class="tool-btn hide-text-mobile" (click)="toggleRotate()" title="Rotate View" [class.active]="isRotated()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="23 4 23 10 17 10"/>
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+            </svg>
+            <span class="btn-text">Rotate</span>
+          </button>
           <button class="tool-btn hide-text-mobile" (click)="ss.toggleScaleViewport()" title="Scale to Fit" [class.active]="ss.scaleViewport()">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
@@ -150,13 +157,6 @@ import { ScreenShareService } from '../../services/screen-share.service';
               <line x1="12" y1="17" x2="12" y2="21"/>
             </svg>
             <span class="btn-text">Scale to Fit</span>
-          </button>
-          <button class="tool-btn hide-text-mobile" (click)="ss.sendCtrlAltDel()" title="Send Ctrl+Alt+Del">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="2" y="4" width="20" height="16" rx="2"/>
-              <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 12h8M6 16h.01M18 16h.01"/>
-            </svg>
-            <span class="btn-text">Ctrl+Alt+Del</span>
           </button>
           <div class="toolbar-spacer"></div>
           <button class="tool-btn tool-btn-danger" (click)="disconnect()">
@@ -658,6 +658,11 @@ export class ScreenShareComponent implements AfterViewInit {
 
   readonly configOpen = signal(false);
   readonly showAll = signal(false);
+  readonly isRotated = signal(false);
+
+  // True when fullscreen auto-rotated on mobile (so we undo it on exit).
+  private autoRotatedForFullscreen = false;
+  private readonly mobileQuery = window.matchMedia('(max-width: 767px)');
 
   readonly isConnected = computed(() => this.ss.status() === 'connected');
   readonly isConnecting = computed(() => this.ss.status() === 'connecting');
@@ -732,11 +737,115 @@ export class ScreenShareComponent implements AfterViewInit {
   }
 
   disconnect(): void {
+    if (this.isRotated()) {
+      this.isRotated.set(false);
+      this.clearRotationStyles();
+    }
     this.ss.disconnect();
   }
 
   dismissError(): void {
     this.errorDismissed.set(true);
+  }
+
+  @HostListener('window:resize')
+  @HostListener('window:orientationchange')
+  handleResize(): void {
+    if (this.isConnected()) {
+      setTimeout(() => {
+        if (this.isRotated()) {
+          this.applyRotationStyles();
+        } else {
+          this.ss.recalculateScaling();
+        }
+      }, 100);
+    }
+  }
+
+  @HostListener('document:fullscreenchange')
+  onFullscreenChange(): void {
+    if (document.fullscreenElement) {
+      // ── Entering fullscreen ──────────────────────────────────────────────
+      if (this.mobileQuery.matches && !this.isRotated()) {
+        // Mobile only: auto-rotate if not already rotated.
+        this.autoRotatedForFullscreen = true;
+        this.isRotated.set(true);
+        setTimeout(() => this.applyRotationStyles(), 150);
+      } else {
+        // Already rotated (any device) or desktop — just re-fit dimensions.
+        setTimeout(() => {
+          if (this.isRotated()) this.applyRotationStyles();
+          else this.ss.recalculateScaling();
+        }, 150);
+      }
+    } else {
+      // ── Exiting fullscreen ───────────────────────────────────────────────
+      if (this.autoRotatedForFullscreen) {
+        // Undo the auto-rotation that fullscreen applied.
+        this.autoRotatedForFullscreen = false;
+        this.isRotated.set(false);
+        this.clearRotationStyles();
+        this.ss.recalculateScaling();
+      } else {
+        setTimeout(() => {
+          if (this.isRotated()) this.applyRotationStyles();
+          else this.ss.recalculateScaling();
+        }, 150);
+      }
+    }
+  }
+
+  toggleRotate(): void {
+    this.isRotated.update(v => !v);
+    setTimeout(() => {
+      if (this.isRotated()) {
+        this.applyRotationStyles();
+      } else {
+        this.clearRotationStyles();
+        this.ss.recalculateScaling();
+      }
+    }, 50);
+  }
+
+  private applyRotationStyles(): void {
+    const container = this.vncContainer?.nativeElement;
+    if (!container) return;
+    const parent = container.parentElement!;
+
+    // When rotated, the element's layout box extends outside the parent bounds
+    // (negative left offset). Allow it — the *visual* result (post-transform)
+    // still fits inside. The ancestor main-layout provides the outer clip.
+    parent.style.overflow = 'visible';
+
+    // In fullscreen, window.inner* gives the settled viewport size immediately;
+    // parent.clientWidth/Height may not have updated yet when this runs.
+    const inFullscreen = !!document.fullscreenElement;
+    const pw = inFullscreen ? window.innerWidth  : parent.clientWidth;
+    const ph = inFullscreen ? window.innerHeight : parent.clientHeight;
+
+    container.style.position       = 'absolute';
+    container.style.width          = ph + 'px';
+    container.style.height         = pw + 'px';
+    container.style.top            = ((ph - pw) / 2) + 'px';
+    container.style.left           = ((pw - ph) / 2) + 'px';
+    container.style.transformOrigin = 'center center';
+    container.style.transform      = 'rotate(90deg)';
+    this.ss.recalculateScaling();
+  }
+
+  private clearRotationStyles(): void {
+    const container = this.vncContainer?.nativeElement;
+    if (!container) return;
+    // Restore the parent's overflow before clearing container styles.
+    if (container.parentElement) {
+      container.parentElement.style.overflow = '';
+    }
+    container.style.position       = '';
+    container.style.width          = '';
+    container.style.height         = '';
+    container.style.top            = '';
+    container.style.left           = '';
+    container.style.transform      = '';
   }
 
   toggleFullscreen(): void {
@@ -745,7 +854,9 @@ export class ScreenShareComponent implements AfterViewInit {
     if (document.fullscreenElement) {
       document.exitFullscreen();
     } else {
-      container.requestFullscreen();
+      // Fullscreen the *parent* (viewer-area) so the vncContainer's rotation
+      // styles remain relative to a stable parent element throughout.
+      (container.parentElement ?? container).requestFullscreen();
     }
   }
 

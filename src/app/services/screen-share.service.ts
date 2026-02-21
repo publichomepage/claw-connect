@@ -80,8 +80,24 @@ export class ScreenShareService {
     }
   }
 
-  sendCtrlAltDel(): void {
-    this.rfb?.sendCtrlAltDel();
+
+
+  /**
+   * Forces the noVNC viewer to recalculate its scaling and viewport.
+   * Useful when the device orientation changes or the container is resized.
+   */
+  recalculateScaling(): void {
+    if (this.rfb && this.scaleViewport()) {
+      // Re-applying the scaleViewport property triggers noVNC's internal 
+      // scaling logic which recalculates based on the current container size.
+      this.rfb.scaleViewport = false;
+      // Small tick to ensure the DOM layout has settled
+      setTimeout(() => {
+        if (this.rfb) {
+          this.rfb.scaleViewport = true;
+        }
+      }, 10);
+    }
   }
 
   async preloadNoVNC(): Promise<void> {

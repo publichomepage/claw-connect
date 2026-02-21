@@ -1,7 +1,7 @@
-import { Component, EventEmitter, Output, signal } from '@angular/core';
+import { Component, EventEmitter, Output, effect, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { ConnectionConfig } from '../../services/openclaw.service';
+import { ConnectionConfig, OpenClawService } from '../../services/openclaw.service';
 
 @Component({
   selector: 'app-settings',
@@ -285,8 +285,21 @@ export class SettingsComponent {
   authToken = '';
   authPassword = '';
 
-  constructor() {
+  constructor(private openClaw: OpenClawService) {
     this.loadFromStorage();
+
+    // Auto-close when connected; re-open on disconnect/error (only after a
+    // successful connection so the panel doesn't pop on every fresh page load).
+    let wasConnected = false;
+    effect(() => {
+      const s = this.openClaw.connectionStatus();
+      if (s === 'connected') {
+        wasConnected = true;
+        this.isOpen.set(false);
+      } else if (wasConnected && (s === 'disconnected' || s === 'error')) {
+        this.isOpen.set(true);
+      }
+    });
   }
 
   toggle(): void {
