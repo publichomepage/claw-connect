@@ -55,7 +55,10 @@ if (-not (Test-Path "./onboard.js")) {
 # Run the onboarding logic (CORS + Gateway Funnel)
 node onboard.js
 
-# Start Screen Share Proxy in background
+# Start Screen Share Proxy in background (Idempotent)
+Write-Host -ForegroundColor Gray "Ensuring clean background state (stopping previous sessions)..."
+Get-Process node -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -like "*onboard.js --proxy*" } | Stop-Process -Force -ErrorAction SilentlyContinue
+
 Write-Host -ForegroundColor Gray "Starting Screen Share Proxy in background..."
 Start-Process -FilePath "node" -ArgumentList "onboard.js", "--proxy" -WindowStyle Hidden
 

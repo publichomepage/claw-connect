@@ -69,7 +69,10 @@ fi
 # Run the onboarding logic (CORS + Gateway Funnel)
 node onboard.js
 
-# Start Screen Share Proxy in background
+# Start Screen Share Proxy in background (Idempotent)
+echo -e "${DIM}Ensuring clean background state (stopping previous sessions)...${NC}"
+pkill -f "onboard.js --proxy" || true
+
 echo -e "${DIM}Starting Screen Share Proxy in background...${NC}"
 node onboard.js --proxy > /dev/null 2>&1 &
 
