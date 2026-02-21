@@ -16,6 +16,7 @@ const CONFIG_PATH = path.join(os.homedir(), '.openclaw', 'openclaw.json');
 const BACKUP_PATH = CONFIG_PATH + '.bak';
 const CLAWCONNECT_ORIGIN = 'https://claw.publichome.page';
 const LOCALHOST_ORIGIN = 'http://localhost:4200';
+const DRY_RUN = process.argv.includes('--dry-run');
 
 // Colors for terminal output
 const GREEN = '\x1b[32m';
@@ -44,6 +45,10 @@ function checkCommand(cmd) {
 log('');
 log(`${BOLD}🦞 ClawConnect Setup${RESET}`);
 log(`${DIM}${'─'.repeat(40)}${RESET}`);
+if (DRY_RUN) {
+    log(`${YELLOW}${BOLD}DRY RUN MODE ENABLED${RESET}`);
+    log(`${DIM}No changes will be written, and sensitive data will be masked.${RESET}`);
+}
 log('');
 
 // --- 1. System Requirements ---
@@ -104,8 +109,12 @@ if (!fs.existsSync(CONFIG_PATH)) {
         }
 
         if (changed) {
-            fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2) + '\n', 'utf-8');
-            success(`Updated ${DIM}${CONFIG_PATH}${RESET}`);
+            if (DRY_RUN) {
+                info(`[DRY RUN] Would update ${CONFIG_PATH}`);
+            } else {
+                fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2) + '\n', 'utf-8');
+                success(`Updated ${DIM}${CONFIG_PATH}${RESET}`);
+            }
         } else {
             success('Gateway configuration is already up to date');
             info(`Allowed origins: ${DIM}${origins.join(', ')}${RESET}`);
@@ -114,7 +123,12 @@ if (!fs.existsSync(CONFIG_PATH)) {
         if (config.gateway?.auth?.token) {
             const token = config.gateway.auth.token;
             log('');
-            info(`Your auth token: ${GREEN}${BOLD}${token}${RESET} (copy this into ClawConnect)`);
+            if (DRY_RUN) {
+                const masked = '•'.repeat(24) + token.slice(-4);
+                info(`Your auth token: ${GREEN}${BOLD}${masked}${RESET} (masked for dry-run)`);
+            } else {
+                info(`Your auth token: ${GREEN}${BOLD}${token}${RESET} (copy this into ClawConnect)`);
+            }
         }
     } catch (err) {
         error(`Failed to update config: ${err.message}`);

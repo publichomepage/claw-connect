@@ -177,6 +177,8 @@ ClawConnect needs to connect to your local OpenClaw Gateway from the browser. Ru
 npm run setup
 ```
 
+> **Note:** Run `npm run setup -- --dry-run` to see what changes would be made and view a masked version of your auth token (safe for screen sharing or videos).
+
 This will:
 - Add `https://claw.publichome.page` to `gateway.controlUi.allowedOrigins`
 - Enable browser-based token authentication
