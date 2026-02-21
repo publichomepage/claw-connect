@@ -80,10 +80,17 @@ export class OpenClawService {
   private establishConnection(): void {
     if (!this.config) return;
 
+    // Track whether onerror fired so onclose can preserve the error state.
+    // WebSocket always fires onerror THEN onclose — without this flag the
+    // onclose handler would immediately overwrite 'error' with 'disconnected',
+    // hiding the error banner from the user.
+    let hadError = false;
+
     try {
       this.ws = new WebSocket(this.config.url);
 
       this.ws.onopen = () => {
+        hadError = false;
         // Don't set 'connected' yet — wait for handshake
         // Server will send a connect.challenge event first
       };
@@ -94,15 +101,23 @@ export class OpenClawService {
 
       this.ws.onclose = (event) => {
         this.handshakeComplete = false;
-        this.connectionStatus.set('disconnected');
         this.isTyping.set(false);
         this.messages.update(msgs => msgs.map(m => m.isStreaming ? { ...m, isStreaming: false } : m));
+
+        if (hadError) {
+          // onerror already set 'error' — keep it visible
+          this.connectionStatus.set('error');
+        } else {
+          this.connectionStatus.set('disconnected');
+        }
+
         if (!event.wasClean && this.config) {
           this.attemptReconnect();
         }
       };
 
       this.ws.onerror = () => {
+        hadError = true;
         this.connectionStatus.set('error');
         this.isTyping.set(false);
         this.messages.update(msgs => msgs.map(m => m.isStreaming ? { ...m, isStreaming: false } : m));

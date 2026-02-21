@@ -1,14 +1,7 @@
-import { Component, ElementRef, ViewChild, OnDestroy, signal, AfterViewInit, effect } from '@angular/core';
+import { Component, ElementRef, ViewChild, OnInit, AfterViewInit, computed, effect, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { ScreenShareService } from '../../services/screen-share.service';
-
-interface ScreenShareConfig {
-  host: string;
-  port: number;
-  username: string;
-  password: string;
-}
 
 @Component({
   selector: 'app-screen-share',
@@ -104,15 +97,12 @@ interface ScreenShareConfig {
       @if (ss.status() === 'error') {
         <div class="connection-error-banner">
           <span class="error-icon">⚠️</span>
-
           <div class="error-text">
             <strong>Connection Failed</strong>
-            <span>{{ statusMessage() || 'Ensure Tailscale is connected and the proxy is running.' }}</span>
+            <span>{{ ss.statusMessage() || 'Ensure Tailscale is connected and the proxy is running.' }}</span>
           </div>
         </div>
       }
-
-      <!-- Status overlay removed (dot moved to header labels) -->
 
       <!-- VNC Viewer Area -->
       <div class="viewer-area" [class.active]="isConnected()">
@@ -148,7 +138,7 @@ interface ScreenShareConfig {
             </svg>
             Fullscreen
           </button>
-          <button class="tool-btn" (click)="toggleScaleViewport()" title="Scale to Fit" [class.active]="scaleViewport()">
+          <button class="tool-btn" (click)="ss.toggleScaleViewport()" title="Scale to Fit" [class.active]="ss.scaleViewport()">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
               <line x1="8" y1="21" x2="16" y2="21"/>
@@ -156,7 +146,7 @@ interface ScreenShareConfig {
             </svg>
             Scale to Fit
           </button>
-          <button class="tool-btn" (click)="sendCtrlAltDel()" title="Send Ctrl+Alt+Del">
+          <button class="tool-btn" (click)="ss.sendCtrlAltDel()" title="Send Ctrl+Alt+Del">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="2" y="4" width="20" height="16" rx="2"/>
               <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 12h8M6 16h.01M18 16h.01"/>
@@ -178,7 +168,7 @@ interface ScreenShareConfig {
       height: 100%;
       min-height: 0;
     }
- 
+
     .screen-share-container {
       display: flex;
       flex-direction: column;
@@ -195,7 +185,7 @@ interface ScreenShareConfig {
       overflow: hidden;
       transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
     }
- 
+
     .config-panel:not(.collapsed):hover,
     .config-panel.collapsed {
       background: rgba(255, 255, 255, 0.02);
@@ -377,8 +367,6 @@ interface ScreenShareConfig {
       to { transform: rotate(360deg); }
     }
 
-    /* Status Overlay Removed */
-
     /* Viewer Area */
     .viewer-area {
       flex: 1;
@@ -390,11 +378,11 @@ interface ScreenShareConfig {
       flex-direction: column;
       transition: background 0.3s;
     }
- 
+
     .viewer-area.active {
       background: #000;
     }
- 
+
     .vnc-container {
       width: 100%;
       flex: 1;
@@ -410,7 +398,7 @@ interface ScreenShareConfig {
       text-align: center;
       padding: 40px 20px;
       max-width: 420px;
-      margin: auto; /* To center it since flex alignment changed */
+      margin: auto;
     }
 
     .placeholder-icon {
@@ -611,29 +599,25 @@ interface ScreenShareConfig {
     }
   `]
 })
-export class ScreenShareComponent implements OnDestroy, AfterViewInit {
+export class ScreenShareComponent implements AfterViewInit {
   @ViewChild('vncContainer') private vncContainer!: ElementRef<HTMLDivElement>;
 
+  // Form state (UI only — connection is owned by the service)
   host = '';
   port = 6080;
   username = '';
   password = '';
 
-  readonly isConnected = signal(false);
-  readonly isConnecting = signal(false);
   readonly configOpen = signal(true);
-  readonly statusMessage = signal('');
-  readonly scaleViewport = signal(true);
   readonly showAll = signal(false);
 
-  private rfb: any = null;
-  private noVNCLoaded = false;
-  private RFBClass: any = null;
+  readonly isConnected = computed(() => this.ss.status() === 'connected');
+  readonly isConnecting = computed(() => this.ss.status() === 'connecting');
 
   constructor(public ss: ScreenShareService) {
     this.loadConfig();
 
-    // Link Tailscale Domain to Gateway Host changes
+    // Sync Tailscale Domain from gateway host setting
     effect(() => {
       const newHost = this.ss.sharedHost();
       if (newHost && this.host !== newHost) {
@@ -641,146 +625,50 @@ export class ScreenShareComponent implements OnDestroy, AfterViewInit {
         this.saveConfig();
       }
     });
+
+    // Auto-manage config panel visibility based on connection state
+    effect(() => {
+      const s = this.ss.status();
+      if (s === 'connected') {
+        this.configOpen.set(false);
+      } else if (s === 'disconnected' || s === 'error') {
+        this.configOpen.set(true);
+      }
+    });
   }
 
   ngAfterViewInit(): void {
-    this.loadNoVNC();
+    // Preload noVNC so the first connect is instant
+    this.ss.preloadNoVNC();
   }
 
-  ngOnDestroy(): void {
-    this.disconnect();
-  }
+  // ngOnDestroy intentionally omitted — the service owns the connection and
+  // must keep it alive across layout/viewport changes. The component is never
+  // destroyed (chat.component uses CSS visibility, not @if, for this panel).
 
   toggleConfig(): void {
     this.configOpen.update(v => !v);
   }
 
   async connect(): Promise<void> {
-    if (!this.host) return;
-
-    this.isConnecting.set(true);
-    this.ss.updateStatus('connecting');
-    this.statusMessage.set('Connecting to ' + this.host + ':' + this.port + '...');
     this.saveConfig();
-
-    try {
-      await this.ensureNoVNCLoaded();
-
-      if (this.rfb) {
-        this.rfb.disconnect();
-        this.rfb = null;
-      }
-
-      const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-      const url = `${protocol}://${this.host}:${this.port}`;
-      const container = this.vncContainer.nativeElement;
-
-      const creds: any = {};
-      if (this.username) creds.username = this.username;
-      if (this.password) creds.password = this.password;
-
-      this.rfb = new this.RFBClass(container, url, {
-        credentials: Object.keys(creds).length > 0 ? creds : undefined,
-      });
-
-      this.rfb.scaleViewport = this.scaleViewport();
-      this.rfb.resizeSession = false;
-      this.rfb.clipViewport = true;
-      this.rfb.showDotCursor = true;
-      this.rfb.background = '#0a0a0f';
-
-      this.rfb.addEventListener('connect', () => {
-        this.isConnected.set(true);
-        this.isConnecting.set(false);
-        this.ss.updateStatus('connected');
-        this.statusMessage.set('Connected to ' + this.host);
-        this.configOpen.set(false);
-      });
-
-      this.rfb.addEventListener('disconnect', (e: any) => {
-        this.isConnected.set(false);
-        this.isConnecting.set(false);
-        if (e.detail?.clean) {
-          this.statusMessage.set('Disconnected');
-          this.ss.updateStatus('disconnected');
-        } else {
-          this.statusMessage.set('Connection lost — check ws-proxy and Tailscale');
-          this.ss.updateStatus('error', 'Connection lost');
-        }
-      });
-
-      this.rfb.addEventListener('credentialsrequired', (e: any) => {
-        const types: string[] = e.detail?.types || [];
-        const needsUsername = types.includes('username');
-        const needsPassword = types.includes('password');
-
-        if ((needsUsername && !this.username) || (needsPassword && !this.password)) {
-          const missing = [];
-          if (needsUsername && !this.username) missing.push('Mac username');
-          if (needsPassword && !this.password) missing.push('Mac password');
-          this.statusMessage.set('Authentication required — enter ' + missing.join(' and ') + ' above');
-          this.ss.updateStatus('error', 'Auth required');
-          this.isConnecting.set(false);
-          this.configOpen.set(true);
-          return;
-        }
-
-        const creds: any = {};
-        if (this.username) creds.username = this.username;
-        if (this.password) creds.password = this.password;
-        this.rfb.sendCredentials(creds);
-      });
-
-      this.rfb.addEventListener('securityfailure', (e: any) => {
-        this.statusMessage.set('Authentication failed: ' + (e.detail?.reason || 'wrong password'));
-        this.ss.updateStatus('error', 'Auth failed');
-        this.isConnecting.set(false);
-        this.configOpen.set(true);
-      });
-    } catch (err: any) {
-      this.isConnecting.set(false);
-      this.statusMessage.set('Failed to connect: ' + (err.message || err));
-      this.ss.updateStatus('error', err.message);
-    }
+    await this.ss.connect(
+      { host: this.host, port: this.port, username: this.username, password: this.password },
+      this.vncContainer.nativeElement
+    );
   }
 
   disconnect(): void {
-    if (this.rfb) {
-      try {
-        this.rfb.disconnect();
-      } catch {
-        // Ignore
-      }
-      this.rfb = null;
-    }
-    this.isConnected.set(false);
-    this.isConnecting.set(false);
-    this.ss.updateStatus('disconnected');
-    this.statusMessage.set('Disconnected');
-    this.configOpen.set(true);
+    this.ss.disconnect();
   }
 
   toggleFullscreen(): void {
     const container = this.vncContainer?.nativeElement;
     if (!container) return;
-
     if (document.fullscreenElement) {
       document.exitFullscreen();
     } else {
       container.requestFullscreen();
-    }
-  }
-
-  toggleScaleViewport(): void {
-    this.scaleViewport.update(v => !v);
-    if (this.rfb) {
-      this.rfb.scaleViewport = this.scaleViewport();
-    }
-  }
-
-  sendCtrlAltDel(): void {
-    if (this.rfb) {
-      this.rfb.sendCtrlAltDel();
     }
   }
 
@@ -797,7 +685,7 @@ export class ScreenShareComponent implements OnDestroy, AfterViewInit {
     try {
       const stored = localStorage.getItem('clawconnect_screenshare');
       if (stored) {
-        const config: ScreenShareConfig = JSON.parse(stored);
+        const config = JSON.parse(stored);
         this.host = config.host || '';
         this.port = config.port || 6080;
         this.username = config.username || '';
@@ -806,24 +694,5 @@ export class ScreenShareComponent implements OnDestroy, AfterViewInit {
     } catch {
       // Use defaults
     }
-  }
-
-  private async loadNoVNC(): Promise<void> {
-    if (this.noVNCLoaded) return;
-    try {
-      // Load noVNC RFB from local assets (public/novnc/core/)
-      const module = await (new Function('return import("/novnc/core/rfb.js")'))();
-      this.RFBClass = module.default;
-      this.noVNCLoaded = true;
-    } catch (err) {
-      console.warn('noVNC preload failed, will retry on connect:', err);
-    }
-  }
-
-  private async ensureNoVNCLoaded(): Promise<void> {
-    if (this.RFBClass) return;
-    const module = await (new Function('return import("/novnc/core/rfb.js")'))();
-    this.RFBClass = module.default;
-    this.noVNCLoaded = true;
   }
 }

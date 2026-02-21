@@ -52,8 +52,9 @@ import { ScreenShareService } from '../../services/screen-share.service';
 
       <!--
         Unified main layout for both mobile and desktop.
-        [hidden] is used (instead of @if) for panel visibility so that
-        <app-screen-share> is never destroyed on viewport changes.
+        panel-offscreen (not [hidden]/display:none) is used so the VNC canvas
+        always has real dimensions — display:none would collapse it to 0×0 and
+        cause noVNC to drop the connection on every layout switch.
       -->
       <div class="main-layout"
            [class.is-mobile]="isMobile()"
@@ -63,7 +64,7 @@ import { ScreenShareService } from '../../services/screen-share.service';
 
         <!-- Chat Panel -->
         <div class="panel chat-panel"
-             [hidden]="isMobile() && activeTab() !== 'chat'"
+             [class.panel-inactive]="isMobile() && activeTab() !== 'chat'"
              [class.collapsed]="!isMobile() && desktopLayout() === 'screen-full'">
 
           <!-- Desktop collapsed strip (screen-full mode) -->
@@ -178,7 +179,7 @@ import { ScreenShareService } from '../../services/screen-share.service';
 
         <!-- Screen Share Panel -->
         <div class="panel screen-panel"
-             [hidden]="isMobile() && activeTab() !== 'screen'"
+             [class.panel-inactive]="isMobile() && activeTab() !== 'screen'"
              [class.collapsed]="!isMobile() && desktopLayout() === 'chat-full'">
 
           <!-- Desktop collapsed strip (chat-full mode) -->
@@ -350,17 +351,32 @@ import { ScreenShareService } from '../../services/screen-share.service';
       display: flex;
       flex: 1;
       min-height: 0;
-      overflow: hidden;
+      overflow: hidden; /* clips the off-screen panel-inactive slide */
+      position: relative; /* establishes stacking context for absolute-positioned panels */
     }
 
-    /* Mobile: stack panels vertically */
-    .main-layout.is-mobile {
-      flex-direction: column;
-    }
-
-    /* Mobile panels fill available space */
+    /*
+     * Mobile layout: both panels are absolutely positioned and fill the full
+     * layout area at all times — they always have real, non-zero dimensions.
+     *
+     * The inactive panel is pushed off-screen with CSS transform. Unlike
+     * display:none or visibility:hidden, transform is a pure rendering
+     * operation: offsetWidth/offsetHeight are unchanged, the canvas context is
+     * never disturbed, and noVNC's ResizeObserver never fires. This mirrors
+     * how OpenClawService's WebSocket stays alive — the connection is
+     * completely decoupled from anything that could affect DOM dimensions.
+     */
     .main-layout.is-mobile .panel {
-      flex: 1;
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+    }
+
+    .main-layout.is-mobile .panel.panel-inactive {
+      transform: translateX(100%);
+      pointer-events: none;
     }
 
     /* Desktop layout modes */
