@@ -140,8 +140,6 @@ setup.js               # Auto-configuration script
 | Layer | Technology |
 |-------|-----------|
 | Framework | Angular 21 (standalone components, signals) |
-| Styling | Vanilla CSS (dark theme, glassmorphism) |
-| Fonts | Inter + JetBrains Mono |
 | Remote Desktop | noVNC 1.5.0 |
 | VNC Proxy | Node.js `ws` package |
 | Networking | Tailscale Funnel |
