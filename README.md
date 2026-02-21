@@ -329,7 +329,7 @@ node ws-proxy.js 6080 localhost:5900
 
 #### 2. Start Tailscale Funnel
 
-Expose the WebSocket proxy securely over HTTPS using Tailscale Funnel:
+Expose the WebSocket proxy securely over HTTPS using Tailscale Funnel. By default, this will make your local port 6080 accessible via **port 443** on your public Tailscale domain:
 
 ```bash
 tailscale funnel 6080
