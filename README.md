@@ -12,15 +12,25 @@ clawconnect has a very simple architecture, uses wss and you need a tailscale co
 
 ---
 
-## One-Liner Setup (No Clone Required)
+## Magic Setup (macOS)
 
-The easiest way to get your Mac ready is using `npx`. This configures your Gateway CORS and (optionally) starts the Screen Share proxy.
+The absolute easiest way to get started. This script installs Node, OpenClaw, Tailscale, and configures everything for you.
 
 ```bash
-# 1. Configure Gateway & get your token
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/OpenClaw/claw-connect/main/install.sh)"
+```
+
+---
+
+## Alternative: Manual One-Liner
+
+If you already have prerequisites installed, you can use `npx` to just configure Gateway CORS and (optionally) start the Screen Share proxy.
+
+```bash
+# Configure Gateway & get your token
 npx -y claw-connect-onboard
 
-# 2. To also start the Screen Share proxy
+# To also start the Screen Share proxy
 npx -y claw-connect-onboard --proxy
 ```
 
