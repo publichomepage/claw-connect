@@ -1,6 +1,6 @@
 # 🦞 ClawConnect
 
-A premium web interface for [OpenClaw](https://openclaw.ai) — chat with your AI assistant and remotely view your Mac's screen, all from the browser. Built to help find a simpler solution for the browser and avoid polluting personal chat apps with tons of messages.
+A premium web interface for [OpenClaw](https://openclaw.ai) — chat with your AI assistant and remotely view your Mac's screen, all from the browser and without hoping between different apps. Built to help find a simpler solution for the browser and avoid polluting personal chat apps with tons of messages.
 
 **Live:** [claw.publichome.page](https://claw.publichome.page)
 
@@ -67,11 +67,11 @@ npm start              # Dev server at http://localhost:4200
 npm run build          # Production build → dist/ClawConnect/
 ```
 
-### Deploy to Cloudflare Pages
+## Deployment
 
 ```bash
 npm run build
-npx wrangler pages deploy dist/ClawConnect/browser --project-name=claw-connect
+# Deploy the contents of dist/ClawConnect/browser/ to your hosting provider
 ```
 
 ---
@@ -145,7 +145,7 @@ setup.js               # Auto-configuration script
 | Remote Desktop | noVNC 1.5.0 |
 | VNC Proxy | Node.js `ws` package |
 | Networking | Tailscale Funnel |
-| Hosting | Cloudflare Pages |
+| Hosting | Generic (Static) |
 
 ---
 
