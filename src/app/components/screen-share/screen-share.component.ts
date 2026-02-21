@@ -604,7 +604,7 @@ export class ScreenShareComponent implements AfterViewInit {
 
   // Form state (UI only — connection is owned by the service)
   host = '';
-  port = 6080;
+  port = location.protocol === 'https:' ? 443 : 6080;
   username = '';
   password = '';
 
@@ -655,9 +655,34 @@ export class ScreenShareComponent implements AfterViewInit {
   }
 
   async connect(): Promise<void> {
+    // Sanitize host — extract just the domain even if the user pasted a full URL
+    // or an error message containing a URL.
+    let cleanHost = this.host.trim();
+
+    // Try to extract from a pasted URL first (e.g. "https://domain.com:443")
+    try {
+      const urlMatch = cleanHost.match(/https?:\/\/[^\s]+/i) || cleanHost.match(/wss?:\/\/[^\s]+/i);
+      if (urlMatch) {
+        const url = new URL(urlMatch[0]);
+        cleanHost = url.hostname;
+      }
+    } catch {
+      // Fallback if URL parsing fails
+    }
+
+    // Fallback manual cleanup for things like "domain.com/" or "domain.com:443"
+    if (cleanHost.startsWith('wss://')) cleanHost = cleanHost.substring(6);
+    else if (cleanHost.startsWith('ws://')) cleanHost = cleanHost.substring(5);
+    else if (cleanHost.startsWith('https://')) cleanHost = cleanHost.substring(8);
+    else if (cleanHost.startsWith('http://')) cleanHost = cleanHost.substring(7);
+
+    // Strip trailing slashes and ports (e.g., "domain.com:443" -> "domain.com")
+    cleanHost = cleanHost.split(':')[0].replace(/\/+$/, '');
+
+    this.host = cleanHost;
     this.saveConfig();
     await this.ss.connect(
-      { host: this.host, port: this.port, username: this.username, password: this.password },
+      { host: cleanHost, port: this.port, username: this.username, password: this.password },
       this.vncContainer.nativeElement
     );
   }
@@ -694,6 +719,11 @@ export class ScreenShareComponent implements AfterViewInit {
         this.port = config.port || 6080;
         this.username = config.username || '';
         this.password = config.password || '';
+
+        // Auto-migrate: over HTTPS, Tailscale funnel exposes ws-proxy on 443
+        if (location.protocol === 'https:' && this.port === 6080) {
+          this.port = 443;
+        }
       }
     } catch {
       // Use defaults
