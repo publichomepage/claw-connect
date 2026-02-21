@@ -121,7 +121,7 @@ import { ScreenShareService } from '../../services/screen-share.service';
               </div>
               <div class="prereq-item">
                 <span class="prereq-bullet">2</span>
-                <span class="prereq-text">Run <strong><code>npm run setup</code></strong> for Tailscale status & automated checks.</span>
+                <span class="prereq-text">Run the <strong>Magic Setup</strong> script from our GitHub repo for automated status checks and configuration.</span>
               </div>
             </div>
           </div>

@@ -128,7 +128,7 @@ import { ScreenShareService } from '../../services/screen-share.service';
                           <div class="prereq-title">Prerequisites:</div>
                           <div class="prereq-item">
                             <span class="prereq-bullet">1</span>
-                            <span class="prereq-text">Run <strong><code>npm run setup</code></strong> to auto-configure CORS and auth.</span>
+                            <span class="prereq-text">Run the <strong>Magic Setup</strong> script from our GitHub repo to auto-configure CORS and auth (macOS or Windows).</span>
                           </div>
                         </div>
                       }
