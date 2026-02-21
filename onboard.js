@@ -21,6 +21,7 @@ const CLAWCONNECT_ORIGIN = 'https://claw.publichome.page';
 const DRY_RUN = process.argv.includes('--dry-run');
 const START_PROXY = process.argv.includes('--proxy') || process.argv.includes('--all');
 const SHOW_STATUS = process.argv.includes('--status');
+const QUIET = process.argv.includes('--quiet');
 
 // Colors
 const GREEN = '\x1b[32m';
@@ -113,12 +114,14 @@ function setupFunnel(localPort, publicPort = null) {
     }
 }
 
-log('');
-log(`${BOLD}🦞 ClawConnect Onboarding${RESET}`);
-log(`${DIM}${'─'.repeat(40)}${RESET}`);
+if (!QUIET && !SHOW_STATUS) {
+    log('');
+    log(`${BOLD}🦞 ClawConnect Onboarding${RESET}`);
+    log(`${DIM}${'─'.repeat(40)}${RESET}`);
+}
 
 // --- 1. Requirements ---
-log(`${BOLD}Phase 1: Requirements${RESET}`);
+if (!QUIET && !SHOW_STATUS) log(`${BOLD}Phase 1: Requirements${RESET}`);
 const hasOpenClaw = checkCommand('openclaw');
 const hasTailscale = checkCommand('tailscale');
 
@@ -129,8 +132,10 @@ if (hasTailscale) success('Tailscale found');
 else error('Tailscale not found (required for remote access)');
 
 // --- 2. Gateway CORS ---
-log('');
-log(`${BOLD}Phase 2: Gateway Configuration${RESET}`);
+if (!QUIET && !SHOW_STATUS) {
+    log('');
+    log(`${BOLD}Phase 2: Gateway Configuration${RESET}`);
+}
 
 if (!fs.existsSync(CONFIG_PATH)) {
     warn(`OpenClaw config not found at ${CONFIG_PATH}`);
@@ -221,7 +226,7 @@ if (SHOW_STATUS) {
     printStatus();
 } else if (START_PROXY) {
     runProxy();
-} else {
+} else if (!QUIET) {
     log('');
     log(`${BOLD}${GREEN}Ready!${RESET}`);
     log(`${DIM}${'─'.repeat(40)}${RESET}`);

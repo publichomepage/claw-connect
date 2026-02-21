@@ -66,19 +66,21 @@ if [ ! -f "./onboard.js" ]; then
     curl -sLO https://raw.githubusercontent.com/publichomepage/claw-connect/main/onboard.js
 fi
 
-# Run the onboarding logic (CORS + Gateway Funnel)
-node onboard.js
+# Run the onboarding logic (Quietly)
+node onboard.js --quiet
 
 # Start Screen Share Proxy in background (Idempotent)
-echo -e "${DIM}Ensuring clean background state (stopping previous sessions)...${NC}"
+echo -e "${DIM}Configuring background services...${NC}"
 pkill -f "onboard.js --proxy" || true
-
-echo -e "${DIM}Starting Screen Share Proxy in background...${NC}"
 node onboard.js --proxy > /dev/null 2>&1 &
 
+# Brief pause to let background funnels initialize
+sleep 2
+
 echo ""
-echo -e "${GREEN}${BOLD}✨ Setup Complete!${NC}"
+echo -e "${GREEN}${BOLD}✨ ClawConnect Is Ready!${NC}"
 echo -e "${DIM}----------------------------------------${NC}"
 node onboard.js --status
 echo -e "${DIM}----------------------------------------${NC}"
+echo -e "${YELLOW}Tip: Use 'tailscale funnel status' to check domains manually.${NC}"
 echo ""

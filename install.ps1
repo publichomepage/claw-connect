@@ -52,19 +52,21 @@ if (-not (Test-Path "./onboard.js")) {
     Invoke-WebRequest -Uri "https://raw.githubusercontent.com/publichomepage/claw-connect/main/onboard.js" -OutFile "./onboard.js"
 }
 
-# Run the onboarding logic (CORS + Gateway Funnel)
-node onboard.js
+# Run the onboarding logic (Quietly)
+node onboard.js --quiet
 
 # Start Screen Share Proxy in background (Idempotent)
-Write-Host -ForegroundColor Gray "Ensuring clean background state (stopping previous sessions)..."
+Write-Host -ForegroundColor Gray "Configuring background services..."
 Get-Process node -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -like "*onboard.js --proxy*" } | Stop-Process -Force -ErrorAction SilentlyContinue
-
-Write-Host -ForegroundColor Gray "Starting Screen Share Proxy in background..."
 Start-Process -FilePath "node" -ArgumentList "onboard.js", "--proxy" -WindowStyle Hidden
 
+# Brief pause to let background funnels initialize
+Start-Sleep -Seconds 2
+
 Write-Host ""
-Write-Host -ForegroundColor Green "`n✨ Setup Complete!"
+Write-Host -ForegroundColor Green "`n✨ ClawConnect Is Ready!"
 Write-Host -ForegroundColor Gray "----------------------------------------"
 node onboard.js --status
 Write-Host -ForegroundColor Gray "----------------------------------------"
+Write-Host -ForegroundColor Yellow "Tip: Use 'tailscale funnel status' to check domains manually."
 Write-Host ""
