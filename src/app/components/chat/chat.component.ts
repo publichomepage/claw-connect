@@ -181,9 +181,6 @@ import { ScreenShareService } from '../../services/screen-share.service';
                   </button>
                 </div>
               </div>
-              <div class="chat-footer">
-                Powered By <a href="https://www.publichome.page" target="_blank">www.publichome.page</a> All rights reserved. <a href="#">Terms & Policy</a>
-              </div>
           </div>
         </div>
 
@@ -223,6 +220,10 @@ import { ScreenShareService } from '../../services/screen-share.service';
             <app-screen-share />
           </div>
         </div>
+      </div>
+
+      <div class="chat-footer">
+        Powered By <a href="https://www.publichome.page" target="_blank">www.publichome.page</a> All rights reserved. <a href="#">Terms & Policy</a>
       </div>
     </div>
   `,
