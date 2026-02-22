@@ -100,7 +100,7 @@ function setupFunnel(localPort, publicPort = null) {
         log(`${DIM}Configuring Tailscale Funnel for port ${localPort} (Background)...${RESET}`);
         // For screen share (6080) we want raw TCP funnel usually, but --http=6080 6080 works best for web components
         const cmd = publicPort === 6080
-            ? `tailscale funnel --bg --http=6080 6080`
+            ? `tailscale funnel --bg 6080`
             : `tailscale funnel --bg --https=8443 http://localhost:18789`;
 
         // Run as async-style background so it doesn't block the script if it stays open, 
