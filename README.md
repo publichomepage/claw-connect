@@ -1,6 +1,6 @@
 # 🦞 ClawConnect
 
-A premium web interface for [OpenClaw](https://openclaw.ai) — chat with your AI assistant and remotely view your Mac's screen, all from the browser and without hoping between different apps. Built to help find a simpler solution for the browser and avoid polluting personal chat apps with tons of messages.
+A premium web interface for [OpenClaw](https://openclaw.ai) — chat with your AI assistant and remotely view your Mac's screen, all from the browser and without hopping between different apps. Built to help find a simpler solution to chat with openclaw in the browser and avoid polluting my personal chat apps.
 
 **Live:** [claw.publichome.page](https://claw.publichome.page)
 
@@ -28,20 +28,6 @@ Open PowerShell as Administrator and run:
 
 ```powershell
 Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/publichomepage/claw-connect/main/install.ps1'))
-```
-
----
-
-## Alternative: Manual One-Liner
-
-If you already have prerequisites installed, you can use `npx` to just configure Gateway CORS and (optionally) start the Screen Share proxy.
-
-```bash
-# Configure Gateway & get your token
-npx -y claw-connect-onboard
-
-# To also start the Screen Share proxy
-npx -y claw-connect-onboard --proxy
 ```
 
 ---
@@ -93,7 +79,7 @@ For Screen Share:
 |---------|-------|
 | **Tailscale Domain** | `your-mac.tailnet.ts.net` |
 | **WebSocket Port** | `443` |
-| **Mac Username/Password** | Your macOS login credentials |
+| **System Username/Password** | Your system login credentials |
 
 ---
 
