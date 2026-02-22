@@ -72,7 +72,7 @@ node onboard.js --quiet
 # Start Screen Share Proxy in background (Idempotent)
 echo -e "${DIM}Configuring background services...${NC}"
 pkill -f "onboard.js --proxy" || true
-node onboard.js --proxy > /dev/null 2>&1 &
+nohup node onboard.js --proxy > /dev/null 2>&1 &
 
 # Brief pause to let background funnels initialize
 sleep 2
