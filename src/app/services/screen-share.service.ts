@@ -173,8 +173,8 @@ export class ScreenShareService {
 
         if ((needsUser && !config.username) || (needsPass && !config.password)) {
           const missing = [
-            ...(needsUser && !config.username ? ['Mac username'] : []),
-            ...(needsPass && !config.password ? ['Mac password'] : []),
+            ...(needsUser && !config.username ? ['System username'] : []),
+            ...(needsPass && !config.password ? ['System password'] : []),
           ];
           // Missing credentials won't fix themselves — block reconnect
           this.userDisconnected = true;

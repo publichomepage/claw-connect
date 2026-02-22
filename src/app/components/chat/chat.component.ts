@@ -128,7 +128,7 @@ import { ScreenShareService } from '../../services/screen-share.service';
                         <div class="prereq-title">Prerequisites:</div>
                         <div class="prereq-item">
                           <span class="prereq-bullet">1</span>
-                          <span class="prereq-text">Run the <strong>Magic Setup</strong> (<a href="#" class="magic-link" [class.copied]="copiedCommand() === 'macos'" (click)="copyCommand($event, 'macos')" title="Click to copy macOS install command">{{ copiedCommand() === 'macos' ? 'Copied!' : 'macOS' }}</a> / <a href="#" class="magic-link" [class.copied]="copiedCommand() === 'windows'" (click)="copyCommand($event, 'windows')" title="Click to copy Windows install command">{{ copiedCommand() === 'windows' ? 'Copied!' : 'Windows' }}</a>) to create a Tailscale funnel.</span>
+                          <span class="prereq-text">Run the <strong>Magic Setup</strong> (<a href="#" class="magic-link" [class.copied]="copiedCommand() === 'macos'" (click)="copyCommand($event, 'macos')" title="Click to copy macOS install command">{{ copiedCommand() === 'macos' ? 'Copied!' : 'macOS' }}</a> / <a href="#" class="magic-link" [class.copied]="copiedCommand() === 'windows'" (click)="copyCommand($event, 'windows')" title="Click to copy Windows install command">{{ copiedCommand() === 'windows' ? 'Copied!' : 'Windows' }}</a>).</span>
                         </div>
                       </div>
                     }

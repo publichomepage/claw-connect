@@ -51,7 +51,7 @@ import { ScreenShareService } from '../../services/screen-share.service';
               </div>
               <div class="field-row">
                 <div class="field">
-                  <label for="vnc-user">Mac Username</label>
+                  <label for="vnc-user">System Username</label>
                   <input
                     [type]="showAll() ? 'text' : 'password'"
                     id="vnc-user"
@@ -61,7 +61,7 @@ import { ScreenShareService } from '../../services/screen-share.service';
                   />
                 </div>
                 <div class="field">
-                  <label for="vnc-pass">Mac Password</label>
+                  <label for="vnc-pass">System Password</label>
                   <input
                     [type]="showAll() ? 'text' : 'password'"
                     id="vnc-pass"
@@ -116,7 +116,7 @@ import { ScreenShareService } from '../../services/screen-share.service';
             <div class="placeholder-icon">🖥️</div>
             <h3 class="placeholder-title">Remote Screen Control</h3>
             <p class="placeholder-text">
-              Connect to your Mac via Tailscale to view and control your screen remotely.
+              Connect to your System via Tailscale to view and control your screen remotely.
             </p>
             <div class="prereqs">
               <div class="prereq-title">Prerequisites:</div>
@@ -126,7 +126,7 @@ import { ScreenShareService } from '../../services/screen-share.service';
               </div>
               <div class="prereq-item">
                 <span class="prereq-bullet">2</span>
-                <span class="prereq-text">Run the <strong>Magic Setup</strong> (<a href="#" class="magic-link" [class.copied]="copiedCommand() === 'macos'" (click)="copyCommand($event, 'macos')" title="Click to copy macOS install command">{{ copiedCommand() === 'macos' ? 'Copied!' : 'macOS' }}</a> / <a href="#" class="magic-link" [class.copied]="copiedCommand() === 'windows'" (click)="copyCommand($event, 'windows')" title="Click to copy Windows install command">{{ copiedCommand() === 'windows' ? 'Copied!' : 'Windows' }}</a>) to create a Tailscale funnel.</span>
+                <span class="prereq-text">Run the <strong>Magic Setup</strong> (<a href="#" class="magic-link" [class.copied]="copiedCommand() === 'macos'" (click)="copyCommand($event, 'macos')" title="Click to copy macOS install command">{{ copiedCommand() === 'macos' ? 'Copied!' : 'macOS' }}</a> / <a href="#" class="magic-link" [class.copied]="copiedCommand() === 'windows'" (click)="copyCommand($event, 'windows')" title="Click to copy Windows install command">{{ copiedCommand() === 'windows' ? 'Copied!' : 'Windows' }}</a>).</span>
               </div>
             </div>
           </div>
@@ -827,16 +827,16 @@ export class ScreenShareComponent implements AfterViewInit {
     // In fullscreen, window.inner* gives the settled viewport size immediately;
     // parent.clientWidth/Height may not have updated yet when this runs.
     const inFullscreen = !!document.fullscreenElement;
-    const pw = inFullscreen ? window.innerWidth  : parent.clientWidth;
+    const pw = inFullscreen ? window.innerWidth : parent.clientWidth;
     const ph = inFullscreen ? window.innerHeight : parent.clientHeight;
 
-    container.style.position       = 'absolute';
-    container.style.width          = ph + 'px';
-    container.style.height         = pw + 'px';
-    container.style.top            = ((ph - pw) / 2) + 'px';
-    container.style.left           = ((pw - ph) / 2) + 'px';
+    container.style.position = 'absolute';
+    container.style.width = ph + 'px';
+    container.style.height = pw + 'px';
+    container.style.top = ((ph - pw) / 2) + 'px';
+    container.style.left = ((pw - ph) / 2) + 'px';
     container.style.transformOrigin = 'center center';
-    container.style.transform      = 'rotate(90deg)';
+    container.style.transform = 'rotate(90deg)';
     this.ss.recalculateScaling();
   }
 
@@ -847,12 +847,12 @@ export class ScreenShareComponent implements AfterViewInit {
     if (container.parentElement) {
       container.parentElement.style.overflow = '';
     }
-    container.style.position       = '';
-    container.style.width          = '';
-    container.style.height         = '';
-    container.style.top            = '';
-    container.style.left           = '';
-    container.style.transform      = '';
+    container.style.position = '';
+    container.style.width = '';
+    container.style.height = '';
+    container.style.top = '';
+    container.style.left = '';
+    container.style.transform = '';
   }
 
   toggleFullscreen(): void {
